@@ -76,7 +76,7 @@ jobs:
         # rebuilding — the artifact that reaches PyPI must be the same one
         # that was just verified, not a fresh build that only happens to
         # come from the same source.
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*

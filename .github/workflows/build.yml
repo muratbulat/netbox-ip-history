@@ -43,7 +43,7 @@ jobs:
       # suite against it is covered by ci.yml's "package-verify" job, which
       # runs on this same push (including tag pushes) — not repeated here
       # to keep CI to a small number of non-redundant jobs.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: distributions
           path: dist/*
