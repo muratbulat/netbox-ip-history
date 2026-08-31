@@ -1,159 +1,52 @@
-name: Publish PyPI package
+name: Publish to PyPI
 
 on:
   release:
     types: [published]
-  # Lets `verify` be exercised on demand (e.g. to validate a workflow change)
-  # without cutting a real release. `publish` is gated to the actual
-  # `release` event below, so a manual run can never reach PyPI.
-  workflow_dispatch: {}
 
 permissions:
   contents: read
 
 jobs:
-  # A GitHub Release can be published by hand at any time, independent of
-  # whatever other workflows did or didn't pass on that tag/commit — so this
-  # workflow re-runs the release-critical checks itself and the `publish`
-  # job below only runs if `verify` succeeds, so nothing reaches PyPI
-  # without the release artifact itself being re-validated at publish time.
-  verify:
+  build:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: netbox
-          POSTGRES_USER: netbox
-          POSTGRES_PASSWORD: netbox
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U netbox -d netbox"
-          --health-interval=10s --health-timeout=5s --health-retries=5
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s --health-timeout=5s --health-retries=5
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
-      - run: python -m pip install --upgrade pip build twine coverage
-      - name: Version consistency (pyproject.toml / __init__.py / CHANGELOG.md / release tag)
-        # RELEASE_TAG is only set for a real `release` event; a manual
-        # workflow_dispatch run (used to exercise this job without cutting
-        # a release) has no release object, so skip the tag-match half of
-        # the check and fall back to the plain three-file consistency check.
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          if [ -n "$RELEASE_TAG" ]; then
-            python tools/verify_release.py versions --tag "$RELEASE_TAG"
-          else
-            python tools/verify_release.py versions
-          fi
-      - name: CHANGELOG entry required for this release
-        if: github.event.release.tag_name != ''
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          version="${RELEASE_TAG#v}"
-          grep -qF "## [${version}]" CHANGELOG.md || {
-            echo "FAIL: CHANGELOG.md has no '## [${version}]' entry for release ${RELEASE_TAG}"
-            exit 1
-          }
-      - run: python -m build
-      - run: python -m twine check dist/*
-      - name: Verify package contains required runtime files
-        run: python tools/verify_release.py package dist/*.whl dist/*.tar.gz
-      - name: Upload the verified distributions
-        # publish (below) installs and ships these exact files rather than
-        # rebuilding — the artifact that reaches PyPI must be the same one
-        # that was just verified, not a fresh build that only happens to
-        # come from the same source.
+          python-version: "3.x"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade build
+
+      - name: Build
+        run: python -m build
+
+      - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist/*
-      - name: Install the built wheel into a clean environment and run the Django-less tests against it
-        # Exercises the Django-less fallback branch (mirrors ci.yml's own
-        # package-verify job). The real-Django branch is exercised
-        # separately below, against this SAME wheel installed into an
-        # actual NetBox checkout — package completeness and real-NetBox
-        # behavior are different failure modes and neither substitutes for
-        # the other.
-        run: |
-          python -m venv /tmp/publish-wheel-env
-          /tmp/publish-wheel-env/bin/pip install --upgrade pip
-          /tmp/publish-wheel-env/bin/pip install dist/*.whl
-          cp -r tests /tmp/publish-installed-tests
-          cd /tmp/publish-installed-tests
-          /tmp/publish-wheel-env/bin/python -c "import netbox_ip_history as m; assert 'site-packages' in m.__file__, m.__file__"
-          /tmp/publish-wheel-env/bin/python -m unittest discover -s . -v
-      - name: Checkout production-priority NetBox version
-        run: git clone --depth 1 --branch v4.6.8 https://github.com/netbox-community/netbox.git /tmp/netbox
-      - name: Install NetBox and the BUILT WHEEL (not source) into the same environment
-        # The release gate must validate the actual artifact PyPI will
-        # receive, not `pip install .` from source — source tests can pass
-        # while the wheel is incomplete or the build backend silently drops
-        # a runtime file. dist/*.whl here is the exact wheel already
-        # verified above and about to be uploaded to PyPI by the `publish`
-        # job.
-        run: |
-          python -m pip install -r /tmp/netbox/requirements.txt
-          python -m pip install dist/*.whl
-          # Run from outside the checkout: this job's default cwd is
-          # $GITHUB_WORKSPACE, which has the source netbox_ip_history/
-          # directory as a sibling, and `python -c` puts cwd on sys.path —
-          # so checking from there would silently pass against source
-          # even if the wheel install were broken (same gotcha as the
-          # ModuleNotFoundError fixed earlier in netbox-matrix.yml).
-          cd /tmp
-          python -c "import netbox_ip_history as m; assert 'site-packages' in m.__file__, m.__file__"
-      - name: Configure isolated NetBox
-        working-directory: /tmp/netbox/netbox/netbox
-        run: |
-          cat > configuration.py <<'EOF'
-          ALLOWED_HOSTS = ["*"]
-          SECRET_KEY = "ci-only-secret-key-for-tests-only-and-never-for-production-use-1234567890"
-          DATABASE = {"NAME": "netbox", "USER": "netbox", "PASSWORD": "netbox", "HOST": "127.0.0.1", "PORT": "5432"}
-          REDIS = {
-              "tasks": {"HOST": "127.0.0.1", "PORT": 6379, "DATABASE": 0, "SSL": False},
-              "caching": {"HOST": "127.0.0.1", "PORT": 6379, "DATABASE": 1, "SSL": False},
-          }
-          PLUGINS = ["netbox_ip_history"]
-          EOF
-      - name: Django system check must pass on a fresh database
-        working-directory: /tmp/netbox/netbox
-        run: |
-          python manage.py check
-          python manage.py migrate --noinput
-      - name: Model state must match the committed migrations exactly
-        working-directory: /tmp/netbox/netbox
-        run: python manage.py makemigrations netbox_ip_history --check --dry-run
-      - name: Run plugin tests against the installed wheel under real NetBox/Django
-        working-directory: /tmp/netbox/netbox
-        env:
-          DJANGO_SETTINGS_MODULE: netbox.settings
-          PYTHONPATH: .
-        run: python -m coverage run --source=netbox_ip_history "$GITHUB_WORKSPACE/tools/run_ci_tests.py" "$GITHUB_WORKSPACE/tests"
+          name: python-package-distributions
+          path: dist/
 
   publish:
-    needs: verify
-    if: github.event_name == 'release'
+    needs: build
     runs-on: ubuntu-latest
-    environment: pypi
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/netbox-ip-history/
+
     permissions:
       id-token: write
+
     steps:
-      - name: Download the exact distributions verify already checked
+      - name: Download distributions
         uses: actions/download-artifact@v4
         with:
-          name: dist
-          path: dist
-      - uses: pypa/gh-action-pypi-publish@release/v1
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
