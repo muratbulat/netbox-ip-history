@@ -1,0 +1,875 @@
+# Turkish translations for netbox-ip-history.
+# Copyright (C) 2026 Murat Bulat
+# This file is distributed under the same license as the netbox-ip-history package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: netbox-ip-history 0.3.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-25 02:30+0300\n"
+"PO-Revision-Date: 2026-08-25 02:30+0300\n"
+"Last-Translator: Murat Bulat\n"
+"Language-Team: Turkish\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# Menus & Navigation
+msgid "NetBox Ip History"
+msgstr "NetBox IP Geçmişi"
+
+msgid "NetBox IP History"
+msgstr "NetBox IP Geçmişi"
+
+msgid "Multi-source IPAM history, migration, and audit plugin for NetBox"
+msgstr "NetBox için çok kaynaklı IPAM geçmişi, veri taşıma ve denetim eklentisi"
+
+msgid "IP History"
+msgstr "IP Geçmişi"
+
+msgid "Unified Native & External IP Lifecycle Tracking"
+msgstr "Birleşik Yerel ve Harici IP Yaşam Döngüsü Takibi"
+
+msgid "History & Analysis"
+msgstr "Geçmiş ve Analiz"
+
+msgid "Timeline & Search"
+msgstr "Zaman Çizelgesi ve Arama"
+
+msgid "Source Comparison"
+msgstr "Kaynak Karşılaştırması"
+
+msgid "Data Management"
+msgstr "Veri Yönetimi"
+
+msgid "Import Data"
+msgstr "Veri İçe Aktarma"
+
+msgid "Import Jobs"
+msgstr "İçe Aktarma İşleri"
+
+msgid "Source Support"
+msgstr "Kaynak Desteği"
+
+msgid "Source Support Matrix"
+msgstr "Kaynak Destek Matrisi"
+
+msgid "Host"
+msgstr "Sunucu"
+
+msgid "Host 2"
+msgstr "Sunucu 2"
+
+msgid "Host / Owner"
+msgstr "Sunucu / Sahip"
+
+msgid "Host 2 / DNS"
+msgstr "Sunucu 2 / DNS"
+
+msgid "Quick Search"
+msgstr "Hızlı Arama"
+
+msgid "Quick search"
+msgstr "Hızlı arama"
+
+msgid "Clear quick search"
+msgstr "Hızlı aramayı temizle"
+
+msgid "Results"
+msgstr "Sonuçlar"
+
+msgid "Filters"
+msgstr "Filtreler"
+
+msgid "Search"
+msgstr "Ara"
+
+msgid "Import"
+msgstr "İçe Aktar"
+
+msgid "Export"
+msgstr "Dışa Aktar"
+
+msgid "All Data (CSV)"
+msgstr "Tüm Veriler (CSV)"
+
+msgid "All Data (JSON)"
+msgstr "Tüm Veriler (JSON)"
+
+msgid "Import History"
+msgstr "Geçmişi İçe Aktar"
+
+msgid "Timeline"
+msgstr "Zaman Çizelgesi"
+
+msgid "Full Timeline"
+msgstr "Tam Zaman Çizelgesi"
+
+msgid "Compare Sources"
+msgstr "Kaynakları Karşılaştır"
+
+msgid "View IP History"
+msgstr "IP Geçmişini Görüntüle"
+
+msgid "View IP History Timeline"
+msgstr "IP Geçmiş Zaman Çizelgesini Görüntüle"
+
+msgid "View History Timeline"
+msgstr "Geçmiş Zaman Çizelgesini Görüntüle"
+
+msgid "Trace historical allocation, DNS records, changes, and external IPAM source records for"
+msgstr "IP adresi için geçmiş tahsisat, DNS kayıtları, değişiklikler ve harici IPAM kaynak kayıtlarını takip edin:"
+
+msgid "Audit changes, previous assignments, DNS history, and external IPAM records for"
+msgstr "IP adresi için geçmiş değişiklikleri, önceki atamaları, DNS geçmişini ve harici IPAM kayıtlarını denetleyin:"
+
+# Subtitles
+msgid "Supported IPAM Data Adapters and declared capabilities"
+msgstr "Desteklenen IPAM Veri Adaptörleri ve bildirilen yetenekler"
+
+msgid "Search and inspect canonical IP history and lifecycle changes"
+msgstr "Kanonik IP geçmişini ve yaşam döngüsü değişikliklerini arayın ve inceleyin"
+
+msgid "Cross-source IP reconciliation and comparison"
+msgstr "Kaynaklar arası IP mutabakatı ve karşılaştırma"
+
+msgid "Cross-source IP reconciliation and conflict identification"
+msgstr "Kaynaklar arası IP mutabakatı ve çelişki tespiti"
+
+msgid "Upload external IPAM history files (CSV, JSON, JSONL)"
+msgstr "Harici IPAM geçmiş dosyalarını yükleyin (CSV, JSON, JSONL)"
+
+msgid "Import validation and processing summary"
+msgstr "İçe aktarma doğrulama ve işlem özeti"
+
+msgid "History of uploaded IPAM data migrations and imports"
+msgstr "Yüklenen IPAM veri taşıma ve içe aktarma geçmişi"
+
+msgid "Job details, record counters, and safe rollback controls"
+msgstr "İş detayları, kayıt sayaçları ve güvenli geri alma kontrolleri"
+
+msgid "Detailed audit snapshot and network context"
+msgstr "Ayrıntılı denetim snapshot'ı ve ağ bağlamı"
+
+# Search & Filters Form
+msgid "Search History Timeline"
+msgstr "Geçmiş Zaman Çizelgesinde Ara"
+
+msgid "NetBox Ip History Timeline"
+msgstr "NetBox IP Geçmiş Zaman Çizelgesi"
+
+msgid "IP History Timeline"
+msgstr "IP Geçmiş Zaman Çizelgesi"
+
+msgid "Reset Filters"
+msgstr "Filtreleri Sıfırla"
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+msgid "IP Address"
+msgstr "IP Adresi"
+
+msgid "e.g. 192.168.1.1 or 2001:db8::1"
+msgstr "ör. 192.168.1.1 veya 2001:db8::1"
+
+msgid "VRF / Scope"
+msgstr "VRF / Kapsam"
+
+msgid "VRF name, RD, or Global"
+msgstr "VRF adı, RD veya Global"
+
+msgid "VRF:"
+msgstr "VRF:"
+
+msgid "VRF"
+msgstr "VRF"
+
+msgid "Scope: Global / Any"
+msgstr "Kapsam: Global / Herhangi"
+
+msgid "Data Source"
+msgstr "Veri Kaynağı"
+
+msgid "e.g. NetBox, phpIPAM, gestioip"
+msgstr "ör. NetBox, phpIPAM, gestioip"
+
+msgid "Event Type"
+msgstr "Olay Türü"
+
+msgid "All Event Types"
+msgstr "Tüm Olay Türleri"
+
+msgid "From Date"
+msgstr "Başlangıç Tarihi"
+
+msgid "To Date"
+msgstr "Bitiş Tarihi"
+
+msgid "Hostname, device, or owner name"
+msgstr "Sunucu adı, cihaz veya sahip adı"
+
+msgid "Username"
+msgstr "Kullanıcı Adı"
+
+msgid "User / author"
+msgstr "Kullanıcı / yazar"
+
+msgid "Sort oldest first"
+msgstr "Eskiden yeniye sırala"
+
+msgid "Search Timeline"
+msgstr "Zaman Çizelgesinde Ara"
+
+# Timeline & Stats
+msgid "Timeline for"
+msgstr "Zaman Çizelgesi:"
+
+msgid "Target IP Address"
+msgstr "Hedef IP Adresi"
+
+msgid "Total Events"
+msgstr "Toplam Olay"
+
+msgid "Distinct Source(s)"
+msgstr "Farklı Kaynak"
+
+msgid "Recorded Events"
+msgstr "Kaydedilen Olay"
+
+msgid "No records"
+msgstr "Kayıt yok"
+
+msgid "First Seen"
+msgstr "İlk Görülme"
+
+msgid "Earliest lifecycle activity"
+msgstr "En eski yaşam döngüsü aktivitesi"
+
+msgid "Earliest lifecycle entry"
+msgstr "En eski yaşam döngüsü kaydı"
+
+msgid "Last Seen"
+msgstr "Son Görülme"
+
+msgid "Most recent activity"
+msgstr "En son aktivite"
+
+msgid "Chronological Event Timeline"
+msgstr "Kronolojik Olay Zaman Çizelgesi"
+
+msgid "records found"
+msgstr "kayıt bulundu"
+
+msgid "Timestamp"
+msgstr "Zaman Damgası"
+
+msgid "Event"
+msgstr "Olay"
+
+msgid "Source"
+msgstr "Kaynak"
+
+msgid "Interface"
+msgstr "Arayüz"
+
+msgid "Interface / VRF"
+msgstr "Arayüz / VRF"
+
+msgid "DNS Name"
+msgstr "DNS Adı"
+
+msgid "User"
+msgstr "Kullanıcı"
+
+msgid "Actions"
+msgstr "İşlemler"
+
+msgid "Details"
+msgstr "Detaylar"
+
+msgid "NetBox Native"
+msgstr "NetBox Yerel"
+
+msgid "Native Record"
+msgstr "Yerel Kayıt"
+
+msgid "View Full Event Details"
+msgstr "Tüm Olay Detaylarını Görüntüle"
+
+msgid "No historical events found for this IP"
+msgstr "Bu IP için geçmiş olayı bulunamadı"
+
+msgid "No historical events found matching query."
+msgstr "Sorguyla eşleşen geçmiş olayı bulunamadı."
+
+msgid "No IP history queried yet. Use quick search above or filter tab."
+msgstr "Henüz bir IP sorgulanmadı. Yukarıdaki hızlı aramayı veya filtre sekmesini kullanın."
+
+msgid "No records match the specified filters or date range."
+msgstr "Belirtilen filtrelere veya tarih aralığına uygun kayıt bulunamadı."
+
+msgid "Explore Unified IP History"
+msgstr "Birleşik IP Geçmişini Keşfedin"
+
+msgid "Enter an IPv4 or IPv6 address above to retrieve its complete chronological timeline across NetBox audit logs and external IPAM records (GestióIP, phpIPAM, CSV, JSON)."
+msgstr "NetBox denetim günlükleri ve harici IPAM sistemleri (GestióIP, phpIPAM, CSV, JSON) arasındaki tüm kronolojik zaman çizelgesini görüntülemek için yukarıya bir IPv4 veya IPv6 adresi girin."
+
+msgid "Select all"
+msgstr "Tümünü seç"
+
+msgid "Toggle all"
+msgstr "Tümünü işaretle"
+
+msgid "Copy IP"
+msgstr "IP Adresini Kopyala"
+
+msgid "Copy to clipboard"
+msgstr "Panoya kopyala"
+
+msgid "Copy"
+msgstr "Kopyala"
+
+msgid "Copy JSON"
+msgstr "JSON Kopyala"
+
+msgid "Event Details & Raw Snapshot"
+msgstr "Olay Detayları ve Ham Snapshot"
+
+msgid "Showing"
+msgstr "Gösterilen:"
+
+msgid "of"
+msgstr "/"
+
+msgid "events"
+msgstr "olay"
+
+msgid "jobs"
+msgstr "iş"
+
+# Event Types
+msgid "Created"
+msgstr "Oluşturuldu"
+
+msgid "Deleted"
+msgstr "Silindi"
+
+msgid "Updated"
+msgstr "Güncellendi"
+
+msgid "Assigned"
+msgstr "Atandı"
+
+msgid "Unassigned"
+msgstr "Atama Kaldırıldı"
+
+msgid "Reassigned"
+msgstr "Yeniden Atandı"
+
+msgid "Hostname changed"
+msgstr "Sunucu adı değişti"
+
+msgid "DNS changed"
+msgstr "DNS değişti"
+
+msgid "Status changed"
+msgstr "Durum değişti"
+
+msgid "Description changed"
+msgstr "Açıklama değişti"
+
+msgid "Owner changed"
+msgstr "Sahip değişti"
+
+msgid "Interface changed"
+msgstr "Arayüz değişti"
+
+msgid "Imported"
+msgstr "İçe Aktarıldı"
+
+msgid "Discovered"
+msgstr "Keşfedildi"
+
+msgid "ICMP Discovered"
+msgstr "ICMP ile Keşfedildi"
+
+msgid "Ping Up"
+msgstr "Ping Yanıt Verdi"
+
+msgid "Ping Down"
+msgstr "Ping Ulaşılamadı"
+
+msgid "NetBox Ping"
+msgstr "NetBox Ping"
+
+msgid "Unknown"
+msgstr "Bilinmiyor"
+
+# History Detail
+msgid "Historical Event"
+msgstr "Geçmiş Olayı"
+
+msgid "Event Details"
+msgstr "Olay Detayları"
+
+msgid "Back to Timeline"
+msgstr "Zaman Çizelgesine Dön"
+
+msgid "Back to Timeline for"
+msgstr "Zaman Çizelgesine Dön:"
+
+msgid "Detailed record from source"
+msgstr "Kaynaktan ayrıntılı kayıt:"
+
+msgid "Event Metadata"
+msgstr "Olay Üstverisi"
+
+msgid "Raw:"
+msgstr "Ham:"
+
+msgid "Source Record ID"
+msgstr "Kaynak Kayıt No"
+
+msgid "Recorded User"
+msgstr "Kayıt Yapan Kullanıcı"
+
+msgid "Import Job"
+msgstr "İçe Aktarma İşi"
+
+msgid "Job"
+msgstr "İş"
+
+msgid "Record Fingerprint"
+msgstr "Kayıt Parmak İzi"
+
+msgid "Network Context"
+msgstr "Ağ Bağlamı"
+
+msgid "Hostname"
+msgstr "Sunucu Adı"
+
+msgid "Owner / Device"
+msgstr "Sahip / Cihaz"
+
+msgid "Interface / MAC"
+msgstr "Arayüz / MAC"
+
+msgid "Description"
+msgstr "Açıklama"
+
+msgid "Raw Source Snapshot Data"
+msgstr "Ham Kaynak Snapshot Verisi"
+
+msgid "Raw Source Data Snapshot"
+msgstr "Ham Kaynak Veri Snapshot'ı"
+
+# Source Comparison
+msgid "Compare"
+msgstr "Karşılaştır"
+
+msgid "Source Reconciliation"
+msgstr "Kaynak Mutabakatı"
+
+msgid "Compare sources for IP..."
+msgstr "IP için kaynakları karşılaştır..."
+
+msgid "Clear"
+msgstr "Temizle"
+
+msgid "View Timeline"
+msgstr "Zaman Çizelgesini Görüntüle"
+
+msgid "Compared Target"
+msgstr "Karşılaştırılan Hedef"
+
+msgid "Active Sources"
+msgstr "Etkin Kaynaklar"
+
+msgid "Scope Status"
+msgstr "Kapsam Durumu"
+
+msgid "Multi-Source Comparison"
+msgstr "Çok Kaynaklı Karşılaştırma"
+
+msgid "Cross-Source IP Reconciliation & Comparison"
+msgstr "Kaynaklar Arası IP Mutabakatı ve Karşılaştırma"
+
+msgid "Reconciliation Matrix for"
+msgstr "İçin Mutabakat Matrisi:"
+
+msgid "View Full Timeline"
+msgstr "Tam Zaman Çizelgesini Görüntüle"
+
+msgid "DNS Record"
+msgstr "DNS Kaydı"
+
+msgid "MAC Address"
+msgstr "MAC Adresi"
+
+msgid "VRF Scope"
+msgstr "VRF Kapsamı"
+
+msgid "No imported records or history found for this IP"
+msgstr "Bu IP için içe aktarılmış kayıt veya geçmiş bulunamadı"
+
+msgid "No records found across active sources for this IP."
+msgstr "Bu IP için etkin kaynaklarda kayıt bulunamadı."
+
+msgid "Enter an IP address above to compare records across data sources."
+msgstr "Veri kaynaklarındaki kayıtları karşılaştırmak için yukarıya bir IP adresi girin."
+
+msgid "sources for"
+msgstr "kaynak listelendi:"
+
+msgid "This IP address does not appear in any active data source imports."
+msgstr "Bu IP adresi etkin veri kaynağı içe aktarımlarında bulunmuyor."
+
+msgid "Compare IP Records Across Multiple Systems"
+msgstr "Farklı Sistemlerdeki IP Kayıtlarını Karşılaştırın"
+
+msgid "Reconcile IP address assignments between NetBox and legacy IPAM systems (such as GestióIP, phpIPAM, Infoblox, or spreadsheet exports). Spot conflicting hostnames, owners, or MAC addresses instantly."
+msgstr "NetBox ile eski IPAM sistemleri (GestióIP, phpIPAM, Infoblox veya tablo dışa aktarımları gibi) arasındaki IP adresi atamalarını karşılaştırın. Çelişen sunucu adlarını, sahipleri veya MAC adreslerini anında tespit edin."
+
+# Import Form
+msgid "Import Historical IP Data"
+msgstr "Geçmiş IP Verilerini İçe Aktar"
+
+msgid "Import IP History"
+msgstr "Geçmiş IP Verilerini İçe Aktar"
+
+msgid "Safe Dry-Run Analysis"
+msgstr "Güvenli Deneme (Dry-Run) Analizi"
+
+msgid "Uploads are analyzed in dry-run mode first. Duplicate events are automatically identified using SHA-256 fingerprints, and no existing NetBox data will be overwritten."
+msgstr "Yüklemeler önce deneme (dry-run) modunda incelenebilir. Mükerrer kayıtlar SHA-256 parmak iziyle otomatik olarak tespit edilir ve mevcut NetBox verilerinizin üzerine yazılmaz."
+
+msgid "Import Source Profile"
+msgstr "İçe Aktarma Kaynak Profili"
+
+msgid "Select target source configuration..."
+msgstr "Hedef kaynak yapılandırmasını seçin..."
+
+msgid "Export / History File"
+msgstr "Dışa Aktarma / Geçmiş Dosyası"
+
+msgid "Upload CSV, JSON, or JSON Lines export file."
+msgstr "CSV, JSON veya JSON Lines dışa aktarma dosyasını yükleyin."
+
+msgid "File Format"
+msgstr "Dosya Formatı"
+
+msgid "CSV (Comma / Custom Delimited)"
+msgstr "CSV (Virgül / Özel Ayrılmış)"
+
+msgid "JSON / JSON Lines"
+msgstr "JSON / JSON Lines"
+
+msgid "CSV Delimiter"
+msgstr "CSV Ayırıcı Karakter"
+
+msgid "Field separator (default is comma ',')"
+msgstr "Alan ayırıcı karakter (varsayılan virgül ',')"
+
+msgid "Dry run (simulation mode)"
+msgstr "Deneme modu (veritabanına yazmadan simüle et)"
+
+msgid "Validate and preview records without saving changes to the database."
+msgstr "Değişiklikleri veritabanına kaydetmeden kayıtları, doğrulama hatalarını ve mükerrerleri önizleyin."
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Submit"
+msgstr "Gönder"
+
+msgid "Run Import / Analyze File"
+msgstr "İçe Aktarmayı Başlat / Dosyayı Analiz Et"
+
+msgid "Supported Formats"
+msgstr "Desteklenen Formatlar"
+
+msgid "CSV & Excel Exports"
+msgstr "CSV ve Excel Dışa Aktarımları"
+
+msgid "Exports from phpIPAM, GestióIP, RackTables, or custom spreadsheets. Column headers like ip, date, hostname, owner, event are recognized automatically."
+msgstr "phpIPAM, GestióIP, RackTables veya özel tablolardan dışa aktarımlar. 'ip', 'date', 'hostname', 'owner', 'event' gibi sütun başlıkları otomatik olarak tanınır."
+
+msgid "JSON & JSON Lines"
+msgstr "JSON ve JSON Lines"
+
+msgid "Full JSON arrays or newline-delimited JSON (JSONL) for bulk exports."
+msgstr "Toplu dışa aktarımlar için tam JSON dizileri veya satır satır JSON (JSONL)."
+
+msgid "View Supported Adapters"
+msgstr "Desteklenen Adaptörleri Görüntüle"
+
+# Import Result / Preview
+msgid "Import Result"
+msgstr "İçe Aktarma Sonucu"
+
+msgid "Result"
+msgstr "Sonucu"
+
+msgid "Dry Run Analyzed"
+msgstr "Deneme (Dry Run) Analiz Edildi"
+
+msgid "Dry Run Simulation Complete"
+msgstr "Deneme (Dry Run) Simülasyonu Tamamlandı"
+
+msgid "No records were saved to the database. Uncheck 'Dry Run Validation' to perform a live import."
+msgstr "Veritabanına hiçbir kayıt kaydedilmedi. Gerçek içe aktarma yapmak için 'Deneme Doğrulaması' seçeneğini kaldırarak tekrar yükleyin."
+
+msgid "Import Completed Successfully"
+msgstr "İçe Aktarma Başarıyla Tamamlandı"
+
+msgid "Records have been validated and saved to NetBox IP History."
+msgstr "Kayıtlar doğrulandı ve NetBox IP Geçmişine başarıyla kaydedildi."
+
+msgid "Total Records"
+msgstr "Toplam Kayıt"
+
+msgid "Valid / Createable"
+msgstr "Geçerli / Oluşturulabilir"
+
+msgid "Created Events"
+msgstr "Oluşturulan Olaylar"
+
+msgid "Duplicate Records"
+msgstr "Mükerrer Kayıtlar"
+
+msgid "Duplicates Skipped"
+msgstr "Atlanan Mükerrerler"
+
+msgid "Errors"
+msgstr "Hatalar"
+
+msgid "Source Name"
+msgstr "Kaynak Adı"
+
+msgid "File Name"
+msgstr "Dosya Adı"
+
+msgid "Processed Mode"
+msgstr "İşlem Modu"
+
+msgid "Error Details"
+msgstr "Hata Detayları"
+
+msgid "View All Import Jobs"
+msgstr "Tüm İçe Aktarma İşlerini Görüntüle"
+
+msgid "Upload Another File"
+msgstr "Başka Dosya Yükle"
+
+msgid "Search Imported Events"
+msgstr "İçe Aktarılan Olayları Ara"
+
+# Import Jobs List & Detail
+msgid "Import History Jobs"
+msgstr "İçe Aktarma İş Geçmişi"
+
+msgid "Import Jobs"
+msgstr "İçe Aktarma İşleri"
+
+msgid "Add Import"
+msgstr "İçe Aktarma Ekle"
+
+msgid "Job ID"
+msgstr "İş No"
+
+msgid "ID"
+msgstr "ID"
+
+msgid "Started"
+msgstr "Başlangıç"
+
+msgid "Completed"
+msgstr "Tamamlandı"
+
+msgid "Status"
+msgstr "Durum"
+
+msgid "Total"
+msgstr "Toplam"
+
+msgid "Created"
+msgstr "Oluşturulan"
+
+msgid "View"
+msgstr "Görüntüle"
+
+msgid "View Details"
+msgstr "Detayları Görüntüle"
+
+msgid "No import jobs recorded yet"
+msgstr "Henüz kaydedilmiş içe aktarma işi yok"
+
+msgid "No import jobs executed yet."
+msgstr "Henüz çalıştırılmış bir içe aktarma işi yok."
+
+msgid "Upload external IPAM history files to populate this log."
+msgstr "Bu günlüğü doldurmak için harici IPAM geçmiş dosyaları yükleyin."
+
+msgid "Start First Import"
+msgstr "İlk İçe Aktarmayı Başlat"
+
+msgid "Back to Jobs"
+msgstr "İş Listesine Dön"
+
+msgid "Source:"
+msgstr "Kaynak:"
+
+msgid "File:"
+msgstr "Dosya:"
+
+msgid "Dry Run"
+msgstr "Deneme (Dry Run)"
+
+msgid "Rolled Back"
+msgstr "Geri Alındı"
+
+msgid "Rolled back"
+msgstr "Geri alındı"
+
+msgid "Failed"
+msgstr "Başarısız"
+
+msgid "Running"
+msgstr "Çalışıyor"
+
+msgid "Rollback Complete:"
+msgstr "Geri Alma Tamamlandı:"
+
+msgid "Historical events created by this import job have been removed."
+msgstr "Bu içe aktarma işiyle oluşturulan geçmiş olayları başarıyla temizlendi."
+
+msgid "Historical events created by this import job have been successfully purged from database. Native NetBox data remains untouched."
+msgstr "Bu içe aktarma işiyle oluşturulan geçmiş kayıtları veritabanından başarıyla temizlendi. NetBox yerel verileri etkilenmedi."
+
+msgid "Job Details"
+msgstr "İş Detayları"
+
+msgid "Job Details & Metadata"
+msgstr "İş Detayları ve Üstverisi"
+
+msgid "Source Configuration"
+msgstr "Kaynak Yapılandırması"
+
+msgid "Started Timestamp"
+msgstr "Başlangıç Zamanı"
+
+msgid "Completed Timestamp"
+msgstr "Bitiş Zamanı"
+
+msgid "Initiating User"
+msgstr "Başlatan Kullanıcı"
+
+msgid "Global"
+msgstr "Global"
+
+msgid "Select"
+msgstr "Seç"
+
+msgid "System / Automated"
+msgstr "Sistem / Otomatik"
+
+msgid "Original File"
+msgstr "Orijinal Dosya"
+
+msgid "SHA-256 Hash"
+msgstr "SHA-256 Özeti"
+
+msgid "Actions & Safe Rollback"
+msgstr "İşlemler ve Güvenli Geri Alma"
+
+msgid "Safe Rollback"
+msgstr "Güvenli Geri Alma"
+
+msgid "If this import was performed by mistake or contains invalid data, you can safely remove all events associated with this specific job."
+msgstr "Bu içe aktarma yanlışlıkla yapıldıysa veya hatalı veri içeriyorsa, bu işe ait tüm geçmiş kayıtlarını güvenle silebilirsiniz."
+
+msgid "If this import was performed by mistake or corrupted data was uploaded, you can safely remove all historical events associated with this specific import job."
+msgstr "Bu içe aktarma yanlışlıkla yapıldıysa veya hatalı veri yüklendiyse, yalnızca bu işe ait geçmiş kayıtlarını güvenle silebilirsiniz."
+
+msgid "This job has been rolled back. Events are purged."
+msgstr "Bu iş geri alındı. Kayıtlar temizlendi."
+
+msgid "No events to rollback for this job."
+msgstr "Bu iş için geri alınacak kayıt yok."
+
+msgid "Native NetBox inventory, IP addresses, and audit records will never be altered."
+msgstr "NetBox yerel envanteri, IP adresleri ve denetim kayıtları asla değiştirilmez veya silinmez."
+
+msgid "Are you sure you want to remove all events created by this import job?"
+msgstr "Bu içe aktarma işiyle oluşturulan tüm geçmiş kayıtlarını silmek istediğinizden emin misiniz?"
+
+msgid "Purge Events for This Job"
+msgstr "Bu İşe Ait Kayıtları Temizle"
+
+# Source Support Matrix
+msgid "Supported IPAM Data Adapters"
+msgstr "Desteklenen IPAM Veri Adaptörleri"
+
+msgid "adapters registered"
+msgstr "adaptör kayıtlı"
+
+msgid "registered IPAM adapters"
+msgstr "kayıtlı IPAM adaptörü"
+
+msgid "The support matrix reflects adapters dynamically registered in the plugin registry. Each adapter declares its integration capabilities (History API, file exports, VRF scoping, MAC parsing, and audit extraction)."
+msgstr "Destek matrisi, eklenti kayıt defterine dinamik olarak kaydedilen adaptörleri gösterir. Her adaptör entegrasyon yeteneklerini (Geçmiş API'si, dosya dışa aktarımları, VRF kapsamı, MAC ayrıştırma ve denetim çıkarma) bildirir."
+
+msgid "Data Source"
+msgstr "Veri Kaynağı"
+
+msgid "Support Level"
+msgstr "Destek Seviyesi"
+
+msgid "Declared Capabilities"
+msgstr "Bildirilen Yetenekler"
+
+msgid "Export Supported"
+msgstr "Dışa Aktarma Destekleniyor"
+
+msgid "Export"
+msgstr "Dışa Aktarma"
+
+msgid "Native Integration"
+msgstr "Yerel Entegrasyon"
+
+msgid "Native"
+msgstr "Yerel"
+
+msgid "Experimental"
+msgstr "Deneysel"
+
+msgid "Standard CSV / JSON normalization"
+msgstr "Standart CSV / JSON normalizasyonu"
+
+# Other choices
+msgid "Generic / Other IPAM"
+msgstr "Genel / Diğer IPAM"
+
+msgid "History only"
+msgstr "Yalnızca geçmiş"
+
+msgid "Inventory and history"
+msgstr "Envanter ve geçmiş"
+
+msgid "Total Changes"
+msgstr "Toplam Değişiklik"
+
+msgid "First Record"
+msgstr "İlk Kayıt"
+
+msgid "Last Record"
+msgstr "Son Kayıt"
+
+msgid "Earliest known entry"
+msgstr "Bilinen en eski kayıt"
+
+msgid "Events"
+msgstr "Olay"

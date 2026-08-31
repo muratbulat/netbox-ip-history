@@ -1,0 +1,2 @@
+timestamp,ip,event_type,hostname,vrf
+2026-04-08T10:03:00+00:00,10.222.1.33,created,APP-SRV07,PRODUCTION

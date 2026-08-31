@@ -1,0 +1,113 @@
+name: NetBox compatibility
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: NetBox ${{ matrix.netbox }} / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - netbox: v4.4.10
+            python: "3.11"
+          - netbox: v4.5.10
+            python: "3.12"
+          - netbox: v4.6.8
+            python: "3.12"
+          # Priority lane: NetBox 4.6.8 / Python 3.14 is the primary
+          # verified combination. Keep this lane green above all others.
+          - netbox: v4.6.8
+            python: "3.14"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: netbox
+          POSTGRES_USER: netbox
+          POSTGRES_PASSWORD: netbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U netbox -d netbox"
+          --health-interval=10s --health-timeout=5s --health-retries=5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Checkout NetBox
+        run: git clone --depth 1 --branch "${{ matrix.netbox }}" https://github.com/netbox-community/netbox.git netbox
+      - name: Install NetBox and plugin
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r netbox/requirements.txt
+          python -m pip install coverage
+          python -m pip install .
+      - name: Configure isolated NetBox
+        working-directory: netbox/netbox/netbox
+        run: |
+          cat > configuration.py <<'EOF'
+          ALLOWED_HOSTS = ["*"]
+          SECRET_KEY = "ci-only-secret-key-for-tests-only-and-never-for-production-use-1234567890"
+          DATABASE = {"NAME": "netbox", "USER": "netbox", "PASSWORD": "netbox", "HOST": "127.0.0.1", "PORT": "5432"}
+          REDIS = {
+              "tasks": {"HOST": "127.0.0.1", "PORT": 6379, "DATABASE": 0, "SSL": False},
+              "caching": {"HOST": "127.0.0.1", "PORT": 6379, "DATABASE": 1, "SSL": False},
+          }
+          PLUGINS = ["netbox_ip_history"]
+          EOF
+      - name: Check, migrate, and load plugin
+        working-directory: netbox/netbox
+        run: |
+          python manage.py check
+          python manage.py migrate --noinput
+          python manage.py showmigrations netbox_ip_history
+          python manage.py help import_ip_history
+      - name: Verify no migration drift (model state must match migration state)
+        working-directory: netbox/netbox
+        # A release must never ship model changes without a matching migration,
+        # or upgrading environments hit "have changes that are not yet
+        # reflected in a migration". NetBox's manage.py wraps makemigrations
+        # and refuses to *write* a migration outside its own dev workflow, but
+        # --check --dry-run still runs the real Django autodetector and exits
+        # non-zero if the current models and the committed migrations
+        # disagree — that's exactly what this step needs, with no
+        # NetBox-core changes required.
+        run: python manage.py makemigrations netbox_ip_history --check --dry-run
+      - name: Run plugin tests with coverage
+        working-directory: netbox/netbox
+        # Plain `-m unittest discover` never calls django.setup(): even with
+        # DJANGO_SETTINGS_MODULE set, importing a real Django model (e.g.
+        # netbox_ip_history.models -> netbox.models -> ContentType) fails
+        # with AppRegistryNotReady, because settings become readable but the
+        # app registry is never populated. manage.py's own commands don't
+        # hit this since ManagementUtility.execute() calls django.setup()
+        # itself. tools/run_ci_tests.py is the equivalent for a bare
+        # unittest run, so this job actually exercises the real-Django code
+        # path it exists to validate. PYTHONPATH=. is also required: running
+        # a script by path only adds the *script's own* directory to
+        # sys.path[0] (unlike manage.py, which lives inside netbox/netbox/
+        # itself) — without it, "netbox.settings" (the checked-out project
+        # package, a sibling of manage.py in this working directory) isn't
+        # importable and django.setup() fails with ModuleNotFoundError.
+        env:
+          DJANGO_SETTINGS_MODULE: netbox.settings
+          PYTHONPATH: .
+        run: python -m coverage run --source=netbox_ip_history ../../tools/run_ci_tests.py ../../tests
+      - name: Coverage report
+        working-directory: netbox/netbox
+        run: python -m coverage report -m

@@ -1,0 +1,79 @@
+{% extends 'netbox_ip_history/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Source Support Matrix" %}{% endblock %}
+
+{% block page_title %}{% trans "Source Support Matrix" %}{% endblock %}
+
+{% block ip_history_content %}
+<div class="card shadow-sm border">
+  <div class="htmx-container table-responsive" id="object_list">
+    <table class="table table-hover object-list mb-0 align-middle">
+      <thead>
+        <tr>
+          <th class="orderable" style="width: 22%;">{% trans "Data Source" %}</th>
+          <th class="orderable" style="width: 16%;">{% trans "Support Level" %}</th>
+          <th class="orderable" style="width: 14%;">{% trans "Implementation" %}</th>
+          <th class="orderable">{% trans "Declared Capabilities" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in matrix %}
+        <tr class="{% cycle 'even' 'odd' %}">
+          <td>
+            <div class="fw-bold d-flex align-items-center gap-2">
+              <i class="mdi mdi-database-outline text-primary"></i>
+              <span>{{ row.name }}</span>
+            </div>
+            <small class="text-secondary font-monospace">{{ row.source_type }}</small>
+          </td>
+          <td>
+            {% if row.support_level|lower == 'export' %}
+              <span class="badge text-bg-success px-2 py-1">
+                <i class="mdi mdi-file-export-outline me-1"></i>{% trans "Export" %}
+              </span>
+            {% elif row.support_level|lower == 'native' %}
+              <span class="badge text-bg-primary px-2 py-1">
+                <i class="mdi mdi-cube-outline me-1"></i>{% trans "Native" %}
+              </span>
+            {% elif row.support_level|lower == 'experimental' %}
+              <span class="badge text-bg-warning px-2 py-1">
+                <i class="mdi mdi-flask-outline me-1"></i>{% trans "Experimental" %}
+              </span>
+            {% else %}
+              <span class="badge text-bg-secondary px-2 py-1">{{ row.support_level|title }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.implemented %}
+              <span class="badge text-bg-success px-2 py-1">
+                <i class="mdi mdi-check-circle-outline me-1"></i>{% trans "Implemented" %}
+              </span>
+            {% else %}
+              <span class="badge text-bg-secondary px-2 py-1" title="{% trans 'Declares capabilities but delegates to generic CSV/JSON import with no vendor-specific parsing yet.' %}">
+                <i class="mdi mdi-progress-wrench me-1"></i>{% trans "Placeholder" %}
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex flex-wrap gap-1">
+              {% for cap in row.capabilities %}
+                <span class="badge bg-body-secondary text-body border font-monospace small">{{ cap }}</span>
+              {% empty %}
+                <span class="text-secondary small">—</span>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between align-items-center border-top p-2 bg-body-tertiary">
+      <small class="text-secondary">
+        {% trans "Showing" %} {{ matrix|length }} {% trans "registered IPAM adapters" %}
+      </small>
+    </div>
+  </div>
+</div>
+{% endblock %}

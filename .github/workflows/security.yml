@@ -1,0 +1,41 @@
+name: Security
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 3 1 * *"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip pip-audit
+      - run: python -m pip_audit --strict .
+      - name: Scan for known credential patterns (whole repo)
+        run: |
+          # Scans the entire tracked tree, not a hand-picked path list — a
+          # leaked credential can live anywhere, including the repo root,
+          # and would be missed by a curated path allowlist. This workflow
+          # file itself is excluded: it necessarily contains the literal
+          # pattern text below, which would otherwise always match its own
+          # definition.
+          ! git grep -InE '(ghp_|github_pat_|BEGIN .* PRIVATE KEY|AKIA[0-9A-Z]{16})' -- . ':!*.lock' ':!.github/workflows/security.yml'
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml

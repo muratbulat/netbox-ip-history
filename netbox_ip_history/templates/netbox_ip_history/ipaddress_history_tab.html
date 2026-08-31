@@ -1,0 +1,52 @@
+{% extends 'generic/object.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>{% trans "Timestamp" %}</th>
+          <th>{% trans "Event" %}</th>
+          <th>{% trans "Source" %}</th>
+          <th>{% trans "Owner / Host" %}</th>
+          <th>{% trans "DNS Name" %}</th>
+          <th>{% trans "Interface" %}</th>
+          <th>{% trans "User" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td class="text-nowrap">{{ event.timestamp }}</td>
+          <td><span class="badge text-bg-{{ event.color }}">{{ event.event_type_display|default:event.event_type }}</span></td>
+          <td>
+            {% if event.native %}
+              <span class="badge text-bg-primary">{% trans "NetBox" %}</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ event.source }}</span>
+            {% endif %}
+          </td>
+          <td>{{ event.owner_name|default:event.hostname|placeholder }}</td>
+          <td>{{ event.dns_name|placeholder }}</td>
+          <td>{{ event.interface_name|placeholder }}</td>
+          <td>{{ event.username|placeholder }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted">
+            {% trans "No historical events recorded for this IP address yet." %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer text-end">
+    <a href="{{ full_timeline_url }}" class="btn btn-sm btn-outline-secondary">
+      {% trans "Full timeline & filters" %}
+    </a>
+  </div>
+</div>
+{% endblock %}

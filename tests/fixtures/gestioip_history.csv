@@ -1,0 +1,3 @@
+ip,fecha,hostname,action,owner
+10.222.1.33,2024-03-12T14:22:00+00:00,WEB-SRV01,Added,admin
+10.222.1.33,2024-11-18T09:12:00+00:00,WEB-SRV01,Deleted,admin

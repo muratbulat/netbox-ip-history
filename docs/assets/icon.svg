@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">NetBox IP History icon</title>
+  <desc id="desc">An address node connected to a history clock</desc>
+  <circle cx="256" cy="256" r="224" fill="#16324f"/>
+  <path d="M128 184h168M128 256h112M128 328h168" stroke="#fff" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="350" cy="256" r="82" fill="#36b37e" stroke="#fff" stroke-width="16"/>
+  <path d="M350 211v49l32 22" fill="none" stroke="#16324f" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

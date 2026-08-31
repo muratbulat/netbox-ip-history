@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+recursive-include netbox_ip_history/templates *
+recursive-include netbox_ip_history/locale *
+recursive-include netbox_ip_history/migrations *.py
+recursive-include tests/fixtures *

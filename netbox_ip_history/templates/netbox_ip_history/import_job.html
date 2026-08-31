@@ -1,0 +1,113 @@
+{% extends 'netbox_ip_history/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Import Job" %} #{{ job.pk }}{% endblock %}
+
+{% block page_title %}{% trans "Import Job" %} #{{ job.pk }}{% endblock %}
+{% block subtitle %}
+<span class="text-secondary fs-5">
+  {% if job.status == 'completed' %}
+    <span class="badge text-bg-success"><i class="mdi mdi-check-circle-outline me-1"></i>{% trans "Completed" %}</span>
+  {% elif job.status == 'dry_run' %}
+    <span class="badge text-bg-info"><i class="mdi mdi-flask-outline me-1"></i>{% trans "Dry Run" %}</span>
+  {% elif job.status == 'rolled_back' %}
+    <span class="badge text-bg-secondary"><i class="mdi mdi-undo-variant me-1"></i>{% trans "Rolled Back" %}</span>
+  {% elif job.status == 'failed' %}
+    <span class="badge text-bg-danger"><i class="mdi mdi-alert-circle-outline me-1"></i>{% trans "Failed" %}</span>
+  {% else %}
+    <span class="badge text-bg-warning">{{ job.get_status_display }}</span>
+  {% endif %}
+</span>
+{% endblock %}
+
+{% block ip_history_content %}
+{% if rolled_back %}
+<div class="alert alert-warning alert-dismissible fade show mb-3 shadow-sm" role="alert">
+  <i class="mdi mdi-information-outline me-2"></i>
+  <strong>{% trans "Rollback Complete:" %}</strong> {% trans "Historical events created by this import job have been removed." %}
+</div>
+{% endif %}
+
+<div class="row mb-3">
+  <div class="col col-12 col-xl-7">
+    <div class="card shadow-sm border">
+      <h2 class="card-header d-flex align-items-center gap-2">
+        <i class="mdi mdi-information-outline text-primary"></i>
+        <span>{% trans "Job Details" %}</span>
+      </h2>
+      <table class="table table-hover attr-table mb-0 align-middle">
+        <tbody>
+          <tr>
+            <th scope="row">{% trans "Source Configuration" %}</th>
+            <td><span class="badge text-bg-secondary"><i class="mdi mdi-database me-1"></i>{{ job.source.name }}</span></td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Started" %}</th>
+            <td class="font-monospace">{{ job.started|date:"Y-m-d H:i:s T" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Completed" %}</th>
+            <td class="font-monospace">{{ job.completed|date:"Y-m-d H:i:s T"|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "User" %}</th>
+            <td><i class="mdi mdi-account-outline text-secondary me-1"></i>{{ job.user.username|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "File Name" %}</th>
+            <td class="font-monospace">{{ job.filename|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Total Records" %}</th>
+            <td class="font-monospace fw-bold">{{ job.total_records }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Created Events" %}</th>
+            <td class="font-monospace text-success fw-bold">{{ job.created_records }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Duplicates Skipped" %}</th>
+            <td class="font-monospace text-warning fw-bold">{{ job.duplicate_records }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Errors" %}</th>
+            <td class="font-monospace text-danger fw-bold">{{ job.error_records }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col col-12 col-xl-5 mt-3 mt-xl-0">
+    <div class="card shadow-sm border">
+      <h2 class="card-header d-flex align-items-center gap-2">
+        <i class="mdi mdi-shield-refresh-outline text-warning"></i>
+        <span>{% trans "Actions & Safe Rollback" %}</span>
+      </h2>
+      <div class="card-body p-4">
+        {% if job.status != 'rolled_back' and job.created_records > 0 %}
+        <form method="post" action="{% url 'plugins:netbox_ip_history:rollback_import' job.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="confirm" value="yes">
+          <p class="text-secondary small mb-3">
+            {% trans "If this import was performed by mistake or contains invalid data, you can safely remove all events associated with this specific job." %}
+          </p>
+          <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('{% trans "Are you sure you want to remove all events created by this import job?" %}');">
+            <i class="mdi mdi-trash-can-outline me-1"></i> {% trans "Purge Events for This Job" %}
+          </button>
+        </form>
+        {% else %}
+        <p class="text-secondary mb-0">
+          <i class="mdi mdi-check-circle text-success me-1"></i>
+          {% if job.status == 'rolled_back' %}
+            {% trans "This job has been rolled back. Events are purged." %}
+          {% else %}
+            {% trans "No events to rollback for this job." %}
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

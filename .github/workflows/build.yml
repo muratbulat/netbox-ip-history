@@ -1,0 +1,49 @@
+name: Package build
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade build twine
+      - name: Version consistency (pyproject.toml / __init__.py / CHANGELOG.md / tag)
+        # On a tag push, the tag itself must also match. On PRs there is no
+        # tag, so only the three file-level sources are cross-checked.
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            python tools/verify_release.py versions --tag "${GITHUB_REF_NAME}"
+          else
+            python tools/verify_release.py versions
+          fi
+      - name: CHANGELOG entry required for a tagged release
+        if: github.ref_type == 'tag'
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          grep -qF "## [${version}]" CHANGELOG.md || {
+            echo "FAIL: CHANGELOG.md has no '## [${version}]' entry for tag ${GITHUB_REF_NAME}"
+            exit 1
+          }
+          echo "OK: CHANGELOG.md has an entry for ${version}"
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - name: Verify package contains required runtime files
+        run: python tools/verify_release.py package dist/*.whl dist/*.tar.gz
+      # Installing the wheel into a clean env and running the full test
+      # suite against it is covered by ci.yml's "package-verify" job, which
+      # runs on this same push (including tag pushes) — not repeated here
+      # to keep CI to a small number of non-redundant jobs.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/*

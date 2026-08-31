@@ -1,0 +1,345 @@
+{% extends 'netbox_ip_history/base.html' %}
+{% load i18n %}
+
+{% block title %}{% if ip %}{{ ip }} | {% endif %}{% trans "IP History" %}{% endblock %}
+
+{% block page_title %}{% if ip %}{{ ip }}{% else %}{% trans "IP History" %}{% endif %}{% endblock %}
+{% block subtitle %}
+{% if ip %}
+<span class="text-secondary fs-5">
+  <i class="mdi mdi-check-bold text-success" title="{% trans "Found" %}"></i> {% trans "Timeline" %}
+</span>
+{% endif %}
+{% endblock %}
+
+{% block ip_history_content %}
+<!-- Sub-Tabs: Results & Filters -->
+<div class="page-tabs mb-3">
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if not show_filters_tab %}active{% endif %}" id="object-list-tab" data-bs-toggle="tab" data-bs-target="#object-list" type="button" role="tab" aria-controls="object-list" aria-selected="{% if not show_filters_tab %}true{% else %}false{% endif %}">
+        {% trans "Results" %}
+        <span class="badge text-bg-secondary total-object-count ms-1">{{ events|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if show_filters_tab %}active{% endif %}" id="filters-form-tab" data-bs-toggle="tab" data-bs-target="#filters-form" type="button" role="tab" aria-controls="filters-form" aria-selected="{% if show_filters_tab %}true{% else %}false{% endif %}">
+        {% trans "Filters" %}
+        {% if form.ip.value or form.vrf.value or form.source.value or form.event_type.value or form.owner.value or form.username.value %}
+        <span class="badge text-bg-primary ms-1"><i class="mdi mdi-check"></i></span>
+        {% endif %}
+      </button>
+    </li>
+  </ul>
+</div>
+
+<div class="tab-content">
+  {# Object list tab #}
+  <div class="tab-pane {% if not show_filters_tab %}show active{% endif %}" id="object-list" role="tabpanel" aria-labelledby="object-list-tab">
+
+    <div id="object-list-status" class="visually-hidden" role="status" aria-live="polite"></div>
+
+    {# Quick Search & Controls Bar matching NetBox #}
+    <div class="row mb-3" id="results">
+      <div class="col-auto d-print-none">
+        <form method="get" action="{% url 'plugins:netbox_ip_history:history' %}">
+          <label for="quicksearch" class="visually-hidden">{% trans "Quick search" %}</label>
+          <div class="input-group input-group-flat me-2">
+            <input type="search" name="ip" id="quicksearch" value="{{ ip|default:'' }}" class="form-control" placeholder="{% trans "Quick search" %}" autocomplete="off">
+            <span class="input-group-text py-1">
+              <a href="{% url 'plugins:netbox_ip_history:history' %}" id="quicksearch_clear" class="{% if not ip %}invisible{% endif %} text-secondary" aria-label="{% trans "Clear quick search" %}">
+                <i class="mdi mdi-close-circle" aria-hidden="true"></i>
+              </a>
+            </span>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-group">
+          {% if ip or form.is_bound %}
+          <a href="{% url 'plugins:netbox_ip_history:history' %}" class="btn btn-outline-danger">
+            <i class="mdi mdi-backspace" aria-hidden="true"></i> {% trans "Reset" %}
+          </a>
+          {% endif %}
+          <a href="{% url 'plugins:netbox_ip_history:compare' %}{% if ip %}?ip={{ ip }}{% endif %}" class="btn btn-outline-secondary">
+            <i class="mdi mdi-compare-horizontal" aria-hidden="true"></i> {% trans "Compare" %}
+          </a>
+          <a href="{% url 'plugins:netbox_ip_history:import' %}" class="btn btn-outline-secondary">
+            <i class="mdi mdi-upload" aria-hidden="true"></i> {% trans "Import" %}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {# Objects Table #}
+    <div class="card shadow-sm border">
+      <div class="htmx-container table-responsive" id="object_list">
+        <table class="table table-hover object-list mb-0 align-middle">
+          <thead>
+            <tr>
+              <th class="w-1" aria-label="{% trans "Select all" %}"><input type="checkbox" class="toggle form-check-input" title="{% trans "Toggle all" %}"></th>
+              <th class="orderable">{% trans "Timestamp" %}</th>
+              <th class="orderable">{% trans "IP Address" %}</th>
+              <th class="orderable">{% trans "VRF" %}</th>
+              <th class="orderable">{% trans "Event" %}</th>
+              <th class="orderable">{% trans "Source" %}</th>
+              <th class="orderable">{% trans "Host / Owner" %}</th>
+              <th class="orderable">{% trans "Host 2 / DNS" %}</th>
+              <th class="orderable">{% trans "Interface" %}</th>
+              <th class="orderable">{% trans "User" %}</th>
+              <th aria-label="{% trans "Actions" %}" class="orderable noprint text-end"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in events %}
+            <tr class="{% cycle 'even' 'odd' %}">
+              <td class="w-1"><input type="checkbox" name="pk" value="{{ event.pk }}" class="form-check-input" aria-label="{% trans "Select" %} {{ event.ip_address }}"></td>
+              <td class="font-monospace text-nowrap">
+                <span class="fw-semibold">{{ event.timestamp|date:"Y-m-d" }}</span>
+                <small class="text-secondary d-block">{{ event.timestamp|date:"H:i:s T" }}</small>
+              </td>
+              <td class="font-monospace fw-bold">
+                <a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ event.ip_address }}" id="ipaddress_{{ event.pk }}" class="text-decoration-none">{{ event.ip_address }}{% if event.prefix_length %}<span class="text-secondary fw-normal">/{{ event.prefix_length }}</span>{% endif %}</a>
+              </td>
+              <td>
+                {% if event.vrf and event.vrf != "Global" %}
+                  <span class="badge text-bg-secondary">{{ event.vrf }}</span>
+                {% else %}
+                  <span class="text-secondary small">{% trans "Global" %}</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge text-bg-{{ event.color }}">{{ event.event_type_display|default:event.event_type }}</span>
+              </td>
+              <td>
+                {% if event.native %}
+                  <span class="badge text-bg-primary"><i class="mdi mdi-cube-outline me-1"></i>NetBox</span>
+                {% else %}
+                  <span class="badge text-bg-secondary"><i class="mdi mdi-database me-1"></i>{{ event.source }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="fw-semibold">{{ event.owner_name|default:event.hostname|default:"—" }}</div>
+                {% if event.description %}
+                  <small class="text-secondary text-truncate d-block" style="max-width: 220px;">{{ event.description }}</small>
+                {% endif %}
+              </td>
+              <td class="font-monospace small">
+                {% if event.owner_name and event.hostname and event.owner_name != event.hostname %}
+                  {{ event.hostname }}
+                {% elif event.dns_name and event.dns_name != event.owner_name and event.dns_name != event.hostname %}
+                  {{ event.dns_name }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                {% if event.interface_name %}
+                  <span class="badge bg-body-secondary text-body border font-monospace">{{ event.interface_name }}</span>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                {% if event.username %}
+                  <span class="small"><i class="mdi mdi-account-outline text-secondary me-1"></i>{{ event.username }}</span>
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td class="noprint p-1 text-end text-nowrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="navigator.clipboard.writeText('{{ event.ip_address }}');" title="{% trans "Copy IP" %}">
+                  <i class="mdi mdi-content-copy"></i>
+                </button>
+                {% if event.pk %}
+                <a class="btn btn-sm btn-outline-info py-0 px-2" href="{% url 'plugins:netbox_ip_history:event' event.pk %}{% if event.native %}?native=1{% if event.ip_address %}&ip={{ event.ip_address }}{% endif %}{% endif %}" title="{% trans "Event Details & Raw Snapshot" %}">
+                  <i class="mdi mdi-file-document-outline"></i>
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="11" class="text-center text-muted py-5">
+                <div class="d-flex flex-column align-items-center">
+                  <i class="mdi mdi-history text-secondary fs-1 mb-2"></i>
+                  <span class="fw-semibold">
+                    {% if ip %}
+                    {% trans "No historical events found matching query." %}
+                    {% else %}
+                    {% trans "No IP history queried yet. Use quick search above or filter tab." %}
+                    {% endif %}
+                  </span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {# Standard NetBox Pagination Footer #}
+        <div class="d-flex justify-content-between align-items-center border-top p-2 bg-body-tertiary">
+          <small class="text-secondary">
+            {% trans "Showing" %} {% if events %}1-{{ events|length }}{% else %}0{% endif %} {% trans "of" %} {{ events|length }} {% trans "events" %}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Filters Tab #}
+  <div class="tab-pane {% if show_filters_tab %}show active{% endif %}" id="filters-form" role="tabpanel" aria-labelledby="filters-form-tab">
+    <form action="{% url 'plugins:netbox_ip_history:history' %}" method="get">
+      <div class="card">
+        <div class="card-body overflow-visible d-flex flex-wrap justify-content-between py-3">
+
+          {# Search Field Group #}
+          <div class="col col-12">
+            <div class="field-group mb-5">
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.ip.id_for_label }}" class="col-form-label d-inline-block">
+                    {% trans "Search" %}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.ip }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# Attributes Field Group #}
+          <div class="col col-12">
+            <div class="field-group mb-5" role="group" aria-label="{% trans "Attributes" %}">
+              <div class="row">
+                <h2 class="col-9 offset-3">{% trans "Attributes" %}</h2>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.vrf.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.vrf.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.vrf }}
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.event_type.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.event_type.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.event_type }}
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.source.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.source.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.source }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# Host & Scope Field Group #}
+          <div class="col col-12">
+            <div class="field-group mb-5" role="group" aria-label="{% trans "Host" %}">
+              <div class="row">
+                <h2 class="col-9 offset-3">{% trans "Host & Scope" %}</h2>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.owner.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.owner.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.owner }}
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.username.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.username.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.username }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# Timeframe Field Group #}
+          <div class="col col-12">
+            <div class="field-group mb-5" role="group" aria-label="{% trans "Timeframe" %}">
+              <div class="row">
+                <h2 class="col-9 offset-3">{% trans "Timeframe" %}</h2>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.date_from.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.date_from.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.date_from }}
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-3 text-lg-end">
+                  <label for="{{ form.date_to.id_for_label }}" class="col-form-label d-inline-block">
+                    {{ form.date_to.label }}
+                  </label>
+                </div>
+                <div class="col">
+                  {{ form.date_to }}
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col offset-3">
+                  <div class="form-check">
+                    {{ form.oldest_first }}
+                    <label class="form-check-label" for="{{ form.oldest_first.id_for_label }}">
+                      {{ form.oldest_first.label }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {# Sticky Actions Footer matching NetBox Filter Views #}
+        <div class="sticky-actions sticky-actions-footer d-print-none" data-sticky-position="full" data-sticky-when="always">
+          <div class="btn-list">
+            <a href="{% url 'plugins:netbox_ip_history:history' %}" class="btn btn-outline-danger">
+              <i class="mdi mdi-backspace" aria-hidden="true"></i> {% trans "Reset" %}
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="mdi mdi-magnify" aria-hidden="true"></i> {% trans "Search" %}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock ip_history_content %}

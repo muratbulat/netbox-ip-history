@@ -1,0 +1,157 @@
+{% extends 'netbox_ip_history/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Event" %} #{{ event.pk }} | {{ event.ip_address }}{% endblock %}
+
+{% block page_title %}{% trans "Event" %} #{{ event.pk }}{% endblock %}
+{% block subtitle %}
+<span class="text-secondary fs-5">
+  <span class="badge text-bg-{{ event.color }}">{{ event.get_event_type_display|default:event.event_type }}</span>
+  <a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ event.ip_address }}" class="font-monospace fw-bold ms-2 text-decoration-none text-primary" title="{% trans "View Timeline" %}">
+    {{ event.ip_address }}{% if event.prefix_length %}/{{ event.prefix_length }}{% endif %}
+  </a>
+</span>
+{% endblock %}
+
+{% block extra_buttons %}
+<a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ event.ip_address }}" class="btn btn-primary" role="button">
+  <i class="mdi mdi-arrow-left me-1" aria-hidden="true"></i> {% trans "Back to Timeline" %}
+</a>
+<a href="{% url 'plugins:netbox_ip_history:compare' %}?ip={{ event.ip_address }}" class="btn btn-outline-secondary" role="button">
+  <i class="mdi mdi-compare-horizontal me-1" aria-hidden="true"></i> {% trans "Compare Sources" %}
+</a>
+<a href="{% url 'plugins:netbox_ip_history:history' %}" class="btn btn-outline-secondary" role="button" title="{% trans "Return to the main IP History timeline" %}">
+  <i class="mdi mdi-history me-1" aria-hidden="true"></i> {% trans "IP History" %}
+</a>
+{% endblock extra_buttons %}
+
+{% block ip_history_content %}
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2 d-print-none">
+  <a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ event.ip_address }}" class="btn btn-outline-primary shadow-sm">
+    <i class="mdi mdi-arrow-left me-1"></i> {% trans "Back to Timeline for" %} <strong class="font-monospace text-primary ms-1">{{ event.ip_address }}</strong>
+  </a>
+  <div class="d-flex gap-2">
+    <a href="{% url 'plugins:netbox_ip_history:compare' %}?ip={{ event.ip_address }}" class="btn btn-outline-secondary shadow-sm">
+      <i class="mdi mdi-compare-horizontal me-1"></i> {% trans "Compare Sources" %}
+    </a>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <!-- Event Overview Card -->
+  <div class="col col-12 col-xl-6">
+    <div class="card h-100 shadow-sm border">
+      <h2 class="card-header d-flex align-items-center gap-2">
+        <i class="mdi mdi-information-outline text-primary"></i>
+        <span>{% trans "Event Details" %}</span>
+      </h2>
+      <table class="table table-hover attr-table mb-0 align-middle">
+        <tbody>
+          <tr>
+            <th scope="row">{% trans "Timestamp" %}</th>
+            <td class="font-monospace">{{ event.timestamp|date:"Y-m-d H:i:s T" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Data Source" %}</th>
+            <td>
+              <span class="badge text-bg-secondary"><i class="mdi mdi-database me-1"></i>{{ event.source.name }}</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Event Type" %}</th>
+            <td>
+              <span class="badge text-bg-{{ event.color }}">{{ event.get_event_type_display|default:event.event_type }}</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Source Record ID" %}</th>
+            <td class="font-monospace">{{ event.source_record_id|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "User" %}</th>
+            <td><i class="mdi mdi-account-outline text-secondary me-1"></i>{{ event.source_username|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Import Job" %}</th>
+            <td>
+              {% if event.import_job %}
+                <a href="{% url 'plugins:netbox_ip_history:import_job' event.import_job.pk %}" class="text-decoration-none">#{{ event.import_job.pk }}</a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Network & Host Context Card -->
+  <div class="col col-12 col-xl-6 mt-3 mt-xl-0">
+    <div class="card h-100 shadow-sm border">
+      <h2 class="card-header d-flex align-items-center gap-2">
+        <i class="mdi mdi-lan text-success"></i>
+        <span>{% trans "Network Context" %}</span>
+      </h2>
+      <table class="table table-hover attr-table mb-0 align-middle">
+        <tbody>
+          <tr>
+            <th scope="row">{% trans "IP Address" %}</th>
+            <td class="font-monospace fw-bold">
+              <a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ event.ip_address }}" class="text-decoration-none text-primary" title="{% trans "View Timeline" %}">
+                {{ event.ip_address }}{% if event.prefix_length %}<span class="text-secondary fw-normal">/{{ event.prefix_length }}</span>{% endif %}
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "VRF" %}</th>
+            <td><span class="badge text-bg-secondary">{{ event.vrf_name|default:event.vrf_rd|default:"Global" }}</span></td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "DNS Name" %}</th>
+            <td class="font-monospace">{{ event.dns_name|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Hostname" %}</th>
+            <td class="font-monospace">{{ event.hostname|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Owner / Device" %}</th>
+            <td>{{ event.owner_name|default:event.device_name|default:event.virtual_machine_name|default:"—" }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Interface" %}</th>
+            <td>
+              {% if event.interface_name %}<span class="badge bg-body-secondary text-body border font-monospace me-1">{{ event.interface_name }}</span>{% endif %}
+              {% if event.mac_address %}<span class="font-monospace text-secondary">{{ event.mac_address }}</span>{% endif %}
+              {% if not event.interface_name and not event.mac_address %}—{% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Description" %}</th>
+            <td>{{ event.description|default:"—" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if event.raw_data %}
+<!-- Raw Data Snapshot Card -->
+<div class="card shadow-sm border">
+  <h2 class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <i class="mdi mdi-code-json text-info"></i>
+      <span>{% trans "Raw Source Data Snapshot" %}</span>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="navigator.clipboard.writeText(document.getElementById('raw-json-data').innerText);" title="{% trans "Copy JSON" %}">
+      <i class="mdi mdi-content-copy me-1"></i> {% trans "Copy" %}
+    </button>
+  </h2>
+  <div class="card-body p-0">
+    <pre class="json-viewer m-0 border-0 rounded-0" id="raw-json-data">{{ event.raw_data }}</pre>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

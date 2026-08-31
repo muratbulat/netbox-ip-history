@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git grep *)",
+      "Bash(rg *)",
+      "Bash(fd *)",
+      "Bash(just)",
+      "Bash(just status)",
+      "Bash(just diff)",
+      "Bash(just diff-check)",
+      "Bash(just compile)",
+      "Bash(just test)",
+      "Bash(just check)",
+      "Bash(just version-check)",
+      "Bash(just build)",
+      "Bash(just package-check)",
+      "Bash(just wheel-test)",
+      "Bash(just audit)",
+      "Bash(just verify)",
+      "Bash(just default)"
+    ],
+    "deny": [
+      "Bash(git reset --hard *)",
+      "Bash(git clean -fd *)",
+      "Bash(git push --force *)",
+      "Bash(git push --force-with-lease *)"
+    ]
+  }
+}

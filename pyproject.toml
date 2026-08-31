@@ -1,0 +1,55 @@
+# See PEP 518 for the spec of this file
+# https://www.python.org/dev/peps/pep-0518/
+
+[build-system]
+requires = ["setuptools >= 68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netbox-ip-history"
+version = "0.3.1"
+requires-python = ">=3.10.0"
+
+description = "NetBox plugin for unified native and external IPAM lifecycle tracking and history."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Murat Bulat" }]
+keywords = ["netbox", "netbox-plugin", "ipam", "ip-history", "network-automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Django",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Networking",
+    "Topic :: Internet",
+]
+
+[project.urls]
+Homepage = "https://github.com/muratbulat/netbox-ip-history/"
+Documentation = "https://github.com/muratbulat/netbox-ip-history/wiki"
+Source = "https://github.com/muratbulat/netbox-ip-history/"
+Issues = "https://github.com/muratbulat/netbox-ip-history/issues"
+Changelog = "https://github.com/muratbulat/netbox-ip-history/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["netbox_ip_history*"]
+exclude = ["tests*", "tools*"]
+
+[tool.setuptools.package-data]
+"netbox_ip_history" = [
+    "templates/**/*.html",
+    "locale/**/*.mo",
+    "locale/**/*.po",
+]

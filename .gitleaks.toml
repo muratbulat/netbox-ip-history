@@ -1,0 +1,32 @@
+title = "netbox-ip-history gitleaks config"
+
+# Start from gitleaks' built-in rule set (GitHub tokens, AWS keys, private
+# key blocks, generic high-entropy secrets, etc.) and add one rule targeted
+# at a gap the default rules don't cover: a plain "name = 'literal string'"
+# assignment where the name looks like a credential, regardless of entropy
+# or known token format.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-hardcoded-credential"
+description = "Variable assigned a plaintext credential-shaped string literal (password/secret/token/api key/auth)"
+regex = '''(?i)\b[a-z0-9_]*(pass(word)?|pwd|secret|token|api[_-]?key|auth)[a-z0-9_]*\s*[:=]\s*["']([^"'\r\n]{6,})["']'''
+secretGroup = 3
+tags = ["password", "generic", "credential"]
+
+# Scoped to this rule only (nested under [[rules]], not a top-level
+# [allowlist]) — a global allowlist would exempt tests/ and *.example.*
+# paths from gitleaks' entire default ruleset (AWS keys, GitHub tokens,
+# private key blocks, ...), not just this repo's own broad keyword-based
+# rule, which is what actually needs the exemption for known-safe
+# placeholder values in test fixtures and examples.
+[rules.allowlist]
+description = "Known-safe placeholders and CI-only dummy values"
+regexes = [
+  '''(?i)(changeme|change_me|example|placeholder|dummy|xxxxxxxx|your[-_]?password|<[a-z_]+>|ci-only|test[-_]?only|do[-_]?not[-_]?use)''',
+]
+paths = [
+  '''(?i)^tests/''',
+  '''(?i)\.example\.''',
+]

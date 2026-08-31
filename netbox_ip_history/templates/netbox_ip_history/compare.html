@@ -1,0 +1,115 @@
+{% extends 'netbox_ip_history/base.html' %}
+{% load i18n %}
+
+{% block title %}{% if ip %}{{ ip }} | {% endif %}{% trans "Source Comparison" %}{% endblock %}
+
+{% block page_title %}{% if ip %}{{ ip }}{% else %}{% trans "Source Comparison" %}{% endif %}{% endblock %}
+{% block subtitle %}
+{% if ip %}
+<span class="text-secondary fs-5">
+  <i class="mdi mdi-check-bold text-success" title="{% trans "Found" %}"></i> {% trans "Source Reconciliation" %}
+</span>
+{% endif %}
+{% endblock %}
+
+{% block ip_history_content %}
+<!-- Search & Action Bar -->
+<div class="row mb-3" id="results">
+  <div class="col-12 col-md-6 col-lg-5 d-print-none">
+    <form method="get" action="{% url 'plugins:netbox_ip_history:compare' %}">
+      <label for="quicksearch" class="visually-hidden">{% trans "Target IP Address" %}</label>
+      <div class="input-group input-group-flat">
+        <input type="search" name="ip" id="quicksearch" value="{{ ip|default:'' }}" class="form-control" placeholder="{% trans "Compare sources for IP..." %}" autocomplete="off" autofocus>
+        {% if ip %}
+        <span class="input-group-text py-1">
+          <a href="{% url 'plugins:netbox_ip_history:compare' %}" class="text-secondary" aria-label="{% trans "Clear" %}">
+            <i class="mdi mdi-close-circle" aria-hidden="true"></i>
+          </a>
+        </span>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">
+          <i class="mdi mdi-compare-horizontal" aria-hidden="true"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-7 d-flex justify-content-md-end align-items-center gap-2 mt-2 mt-md-0 d-print-none">
+    {% if ip %}
+    <a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ ip }}" class="btn btn-outline-primary">
+      <i class="mdi mdi-timeline-clock-outline me-1"></i> {% trans "View Timeline" %}
+    </a>
+    <a href="{% url 'plugins:netbox_ip_history:compare' %}" class="btn btn-outline-danger">
+      <i class="mdi mdi-backspace me-1"></i> {% trans "Reset" %}
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% if ip and rows %}
+<p class="text-secondary small">
+  {% blocktrans count counter=rows|length %}Showing {{ counter }} source for {{ ip }}{% plural %}Showing {{ counter }} sources for {{ ip }}{% endblocktrans %}
+</p>
+{% endif %}
+
+<!-- Comparison Results Card -->
+<div class="card shadow-sm border">
+  <div class="htmx-container table-responsive" id="object_list">
+    <table class="table table-hover object-list mb-0 align-middle">
+      <thead>
+        <tr>
+          <th class="orderable">{% trans "Source" %}</th>
+          <th class="orderable">{% trans "Hostname" %}</th>
+          <th class="orderable">{% trans "Owner / Device" %}</th>
+          <th class="orderable">{% trans "DNS Record" %}</th>
+          <th class="orderable">{% trans "MAC Address" %}</th>
+          <th class="orderable">{% trans "VRF" %}</th>
+          <th class="orderable">{% trans "Last Seen" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="{% cycle 'even' 'odd' %}">
+          <td>
+            {% if row.native %}
+              <span class="badge text-bg-primary"><i class="mdi mdi-cube-outline me-1"></i>NetBox</span>
+            {% else %}
+              <span class="badge text-bg-secondary"><i class="mdi mdi-database me-1"></i>{{ row.source }}</span>
+            {% endif %}
+          </td>
+          <td class="font-monospace fw-semibold">{{ row.hostname|default:"—" }}</td>
+          <td>{{ row.owner|default:"—" }}</td>
+          <td class="font-monospace small">{{ row.dns|default:"—" }}</td>
+          <td class="font-monospace small">{{ row.mac|default:"—" }}</td>
+          <td><span class="badge bg-body-secondary text-body border">{{ row.vrf }}</span></td>
+          <td class="font-monospace small text-secondary">{{ row.last_seen|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">
+            <div class="d-flex flex-column align-items-center">
+              <i class="mdi mdi-compare-horizontal text-secondary fs-1 mb-2"></i>
+              <span class="fw-semibold">
+                {% if ip %}
+                {% trans "No records found across active sources for this IP." %}
+                {% else %}
+                {% trans "Enter an IP address above to compare records across data sources." %}
+                {% endif %}
+              </span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if rows %}
+    <div class="d-flex justify-content-between align-items-center border-top p-2 bg-body-tertiary">
+      <small class="text-secondary">
+        {% trans "Showing" %} {{ rows|length }} {% trans "sources for" %} <strong class="font-monospace">{{ ip }}</strong>
+      </small>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

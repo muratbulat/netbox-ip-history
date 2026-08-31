@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m compileall -q netbox_ip_history tests
+      - run: python -m pip install coverage
+      - run: python -m coverage run --source=netbox_ip_history -m unittest discover -s tests -v
+      - run: python -m coverage report -m
+      - name: Version consistency (pyproject.toml / __init__.py / CHANGELOG.md)
+        run: python tools/verify_release.py versions
+      - run: python -m pip wheel . --no-deps --wheel-dir dist
+
+  package-verify:
+    name: Package content + installed-artifact tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade build twine
+      - name: Build wheel and sdist
+        run: python -m build
+      - run: python -m twine check dist/*
+      - name: Verify package contains required runtime files
+        run: python tools/verify_release.py package dist/*.whl dist/*.tar.gz
+      - name: Install the built wheel into a clean environment
+        run: |
+          python -m venv /tmp/wheel-env
+          /tmp/wheel-env/bin/pip install --upgrade pip
+          /tmp/wheel-env/bin/pip install dist/*.whl
+      - name: Run the test suite against the INSTALLED wheel, not the source checkout
+        # Copying tests/ outside the repo (and running from there) ensures
+        # `import netbox_ip_history` resolves to site-packages, not the
+        # local source tree that also happens to satisfy the import.
+        run: |
+          cp -r tests /tmp/installed-wheel-tests
+          cd /tmp/installed-wheel-tests
+          /tmp/wheel-env/bin/python -c "import netbox_ip_history, os; assert 'site-packages' in netbox_ip_history.__file__, netbox_ip_history.__file__"
+          /tmp/wheel-env/bin/python -m unittest discover -s . -v

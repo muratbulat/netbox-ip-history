@@ -1,0 +1,95 @@
+{% extends 'base/layout.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "NetBox IP History" %}{% endblock %}
+
+{% block head %}
+<style>
+  /* Event type coloring uses NetBox's own native text-bg-* utility classes
+     (see choices.EVENT_TYPE_COLORS) — no custom color rules needed here.
+     This block is limited to the one thing NetBox has no native equivalent
+     for: a scrollable, monospace raw-JSON snapshot viewer. */
+  .json-viewer {
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    padding: 0.75rem 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+</style>
+{% endblock %}
+
+{% block header %}
+  <div class="page-header m-0">
+    <div class="container-fluid mt-2 d-print-none">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <h1 class="page-title d-flex align-items-center gap-2">
+            <i class="mdi mdi-history text-primary"></i>
+            <span>{% block page_title %}{% trans "IP History" %}{% endblock page_title %}</span>
+          </h1>
+          {% block subtitle %}{% endblock subtitle %}
+        </div>
+        <div class="d-print-none">
+          <div class="btn-list">
+            {% block extra_buttons %}
+            <a href="{% url 'plugins:netbox_ip_history:history' %}" class="btn btn-primary" role="button" title="{% trans "Return to the main IP History timeline" %}">
+              <i class="mdi mdi-history me-1" aria-hidden="true"></i> {% trans "IP History" %}
+            </a>
+            <a href="{% url 'plugins:netbox_ip_history:import' %}" class="btn btn-cyan" role="button">
+              <i class="mdi mdi-upload me-1" aria-hidden="true"></i> {% trans "Import" %}
+            </a>
+            <div class="dropdown">
+              <button type="button" class="btn btn-purple dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="mdi mdi-download me-1" aria-hidden="true"></i> {% trans "Export" %}
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'plugins:netbox_ip_history:history' %}?export=csv{% if ip %}&ip={{ ip }}{% endif %}"><i class="mdi mdi-file-delimited-outline me-2 text-success"></i>{% trans "All Data (CSV)" %}</a></li>
+                <li><a class="dropdown-item" href="{% url 'plugins:netbox_ip_history:history' %}?export=json{% if ip %}&ip={{ ip }}{% endif %}"><i class="mdi mdi-code-json me-2 text-info"></i>{% trans "All Data (JSON)" %}</a></li>
+              </ul>
+            </div>
+            {% endblock extra_buttons %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Navigation Tabs matching NetBox 4.x #}
+    <div class="page-tabs mt-3">
+      <div class="container-fluid">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if active_tab == 'history' %}active{% endif %}" href="{% url 'plugins:netbox_ip_history:history' %}">
+              <i class="mdi mdi-timeline-clock-outline me-1"></i> {% trans "Timeline & Search" %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if active_tab == 'compare' %}active{% endif %}" href="{% url 'plugins:netbox_ip_history:compare' %}">
+              <i class="mdi mdi-compare-horizontal me-1"></i> {% trans "Source Comparison" %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if active_tab == 'import' %}active{% endif %}" href="{% url 'plugins:netbox_ip_history:import' %}">
+              <i class="mdi mdi-upload me-1"></i> {% trans "Import Data" %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if active_tab == 'import_jobs' %}active{% endif %}" href="{% url 'plugins:netbox_ip_history:import_jobs' %}">
+              <i class="mdi mdi-format-list-bulleted-type me-1"></i> {% trans "Import Jobs" %}
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link {% if active_tab == 'source_support' %}active{% endif %}" href="{% url 'plugins:netbox_ip_history:source_support' %}">
+              <i class="mdi mdi-layers-triple-outline me-1"></i> {% trans "Source Support Matrix" %}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock header %}
+
+{% block content %}
+  {% block ip_history_content %}{% endblock %}
+{% endblock content %}

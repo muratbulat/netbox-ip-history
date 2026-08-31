@@ -1,0 +1,6 @@
+{% load i18n %}
+{% if perms.netbox_ip_history.view_historicalipevent %}
+<a href="{% url 'plugins:netbox_ip_history:history' %}?ip={{ object.address.ip }}" class="btn btn-sm btn-primary" title="{% trans 'View IP History Timeline' %}">
+  <i class="mdi mdi-history me-1" aria-hidden="true"></i> {% trans "IP History" %}
+</a>
+{% endif %}
