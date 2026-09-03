@@ -51,6 +51,7 @@ NetBox plugin `0.3.1` provides a canonical-IP timeline combining native NetBox `
 | 0.3.x | 4.4.x (v4.4.10) | 3.11 | Verified in CI |
 | 0.3.x | 4.5.x (v4.5.10) | 3.12 | Verified in CI |
 | 0.3.x | 4.6.x (v4.6.8) | 3.12, 3.14 | Verified in CI; 3.14 is the priority-verified combination |
+| 0.3.x | 4.7.x (v4.7.0) | 3.14 | Verified against a real NetBox instance (not yet in CI) |
 
 These are target ranges and verified environments. See [COMPATIBILITY.md](COMPATIBILITY.md) for the evidence matrix.
 
