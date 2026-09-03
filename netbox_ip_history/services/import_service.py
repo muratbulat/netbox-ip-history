@@ -42,6 +42,36 @@ def normalize_record(source, record: dict[str, Any]) -> dict[str, Any]:
 BATCH_SIZE = 500
 
 
+def _index_for_search(instances: list) -> None:
+    """Feed bulk-created instances into NetBox's global search cache.
+
+    ``bulk_create`` does not emit Django's ``post_save`` signal, which is
+    what NetBox's search backend relies on to keep its cache table current.
+    Without this, imported events never appear in NetBox global search even
+    though they exist in the database (they still show up wherever the
+    plugin queries its own tables directly).
+
+    Deferred via ``transaction.on_commit`` so indexing only runs once the
+    import has actually committed, and any indexing failure can never mark
+    the surrounding ``run_import`` atomic block as rollback-only.
+    """
+    if not instances:
+        return
+
+    def _do_cache() -> None:
+        try:
+            from netbox.search.backends import search_backend
+            search_backend.cache(instances, remove_existing=False)
+        except Exception:
+            pass
+
+    on_commit = getattr(transaction, "on_commit", None)
+    if callable(on_commit):
+        on_commit(_do_cache)
+    else:
+        _do_cache()
+
+
 @transaction.atomic
 def run_import(job: ImportJob, importer, dry_run: bool | None = None) -> ImportJob:
     """Persist validated records in optimized batches; dry runs do not mutate event or job records."""
@@ -85,6 +115,7 @@ def run_import(job: ImportJob, importer, dry_run: bool | None = None) -> ImportJ
 
         if events_to_create:
             HistoricalIPEvent.objects.bulk_create(events_to_create, batch_size=BATCH_SIZE)
+            _index_for_search(events_to_create)
 
     for raw in importer.iter_history():
         count += 1
