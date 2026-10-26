@@ -71,7 +71,7 @@ jobs:
           python manage.py migrate --noinput
           python manage.py makemigrations netbox_ip_history --check --dry-run
           DJANGO_SETTINGS_MODULE=netbox.settings PYTHONPATH=. python "$GITHUB_WORKSPACE/tools/run_tests.py" "$GITHUB_WORKSPACE/tests"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*

@@ -37,7 +37,7 @@ jobs:
       - run: python -m build
       - run: python -m twine check dist/*
       - run: python tools/verify_release.py package dist/*.whl dist/*.tar.gz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*
