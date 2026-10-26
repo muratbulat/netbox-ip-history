@@ -1,0 +1,6 @@
+id,date,user,event_type,event
+101,2026-01-10 10:00:00,admin,host added,"192.0.2.20: ---,---,--- -> device-01,web server,site-a"
+102,2026-01-11 11:00:00,admin,host changed,"192.0.2.20: device-01,web server,site-a -> device-02,app server,site-a"
+103,2026-01-12 12:00:00,ping,status,"192.0.2.20: up -> down"
+104,2026-01-13 13:00:00,admin,red added,"198.51.100.0/24,net-lab,site-b,lab network"
+105,2026-01-14 14:00:00,admin,vlan changed,"vlan26"

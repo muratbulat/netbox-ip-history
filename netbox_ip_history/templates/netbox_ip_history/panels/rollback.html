@@ -1,0 +1,25 @@
+{% extends 'ui/panels/_base.html' %}
+{% load i18n %}
+
+{% block panel_content %}
+  <div class="card-body">
+    {% if object.status == 'rolled_back' %}
+      <p class="text-secondary mb-0">{% trans "This import has been rolled back; its events were deleted." %}</p>
+    {% elif object.status == 'completed' and object.created_records %}
+      {% if perms.netbox_ip_history.delete_historicalipevent %}
+        <form method="post" action="{% url 'plugins:netbox_ip_history:importjob_rollback' pk=object.pk %}">
+          {% csrf_token %}
+          <p class="text-secondary">{% trans "Delete every event created by this import. The job record is kept for audit." %}</p>
+          <button type="submit" class="btn btn-outline-danger"
+                  onclick="return confirm('{% trans "Delete all events created by this import?" %}');">
+            <i class="mdi mdi-undo-variant" aria-hidden="true"></i> {% trans "Roll back import" %}
+          </button>
+        </form>
+      {% else %}
+        <p class="text-secondary mb-0">{% trans "You do not have permission to roll back imports." %}</p>
+      {% endif %}
+    {% else %}
+      <p class="text-secondary mb-0">{% trans "Nothing to roll back." %}</p>
+    {% endif %}
+  </div>
+{% endblock %}

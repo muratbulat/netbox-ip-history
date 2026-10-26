@@ -1,0 +1,4 @@
+include README.md CHANGELOG.md LICENSE
+recursive-include netbox_ip_history/templates *.html
+recursive-include tests *.py
+recursive-include tests/fixtures *

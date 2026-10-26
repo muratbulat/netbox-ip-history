@@ -1,0 +1,7 @@
+timestamp,ip,event_type,hostname,vrf,user
+2026-01-05T09:00:00+00:00,192.0.2.10,created,device-01.example.com,,admin
+2026-02-10T12:30:00+00:00,192.0.2.10,updated,device-02.example.com,Global,admin
+2026-03-01T08:15:00+00:00,192.0.2.11,deleted,device-03.example.com,BLUE,operator
+2026-03-01T08:15:00+00:00,192.0.2.11,deleted,device-03.example.com,BLUE,operator
+not-a-timestamp,192.0.2.12,created,device-04.example.com,,admin
+2026-04-01T00:00:00+00:00,192.0.2.999,created,device-05.example.com,,admin

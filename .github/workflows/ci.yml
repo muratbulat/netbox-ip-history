@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install ruff
+      - run: ruff check .
+      - run: python -m compileall -q netbox_ip_history tests tools
+      - name: Version consistency (pyproject.toml / __init__.py / CHANGELOG.md / tag)
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            python tools/verify_release.py versions --tag "${GITHUB_REF_NAME}"
+          else
+            python tools/verify_release.py versions
+          fi
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python tools/verify_release.py package dist/*.whl dist/*.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*

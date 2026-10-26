@@ -1,0 +1,13 @@
+{"count": 3, "next": null, "previous": null, "results": [
+  {"id": 501, "time": "2026-05-01T10:00:00Z", "user_name": "admin", "action": {"value": "create", "label": "Created"},
+   "changed_object_type": "ipam.ipaddress", "changed_object_id": 7, "object_repr": "2001:db8::50/64",
+   "prechange_data": null,
+   "postchange_data": {"address": "2001:db8::50/64", "status": "active", "dns_name": "device-01.example.com", "vrf": null}},
+  {"id": 502, "time": "2026-05-02T10:00:00Z", "user_name": "admin", "action": {"value": "update", "label": "Updated"},
+   "changed_object_type": "ipam.ipaddress", "changed_object_id": 7, "object_repr": "2001:db8::50/64",
+   "prechange_data": {"address": "2001:db8::50/64", "status": "active", "dns_name": "device-01.example.com", "assigned_object_id": 12, "assigned_object_type": 9},
+   "postchange_data": {"address": "2001:db8::50/64", "status": "deprecated", "dns_name": "device-01.example.com", "assigned_object_id": 12, "assigned_object_type": 9}},
+  {"id": 503, "time": "2026-05-03T10:00:00Z", "user_name": "admin", "action": {"value": "create", "label": "Created"},
+   "changed_object_type": "dcim.device", "changed_object_id": 3, "object_repr": "device-01",
+   "prechange_data": null, "postchange_data": {"name": "device-01"}}
+]}
