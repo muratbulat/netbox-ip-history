@@ -3,14 +3,16 @@
 import logging
 
 from core.models import ObjectChange
-from django.db import transaction
-from django.db.models.signals import post_save
+from django.db import DEFAULT_DB_ALIAS, transaction
+from django.db.models import BigIntegerField
+from django.db.models.functions import Cast
+from django.db.models.signals import post_migrate, post_save
 from django.dispatch import receiver
 from netbox.plugins import get_plugin_config
 
 logger = logging.getLogger("netbox.plugins.netbox_ip_history")
 
-__all__ = ("get_native_source", "record_object_changes")
+__all__ = ("backfill_native_events", "get_native_source", "record_object_changes")
 
 _UPSERT_FIELDS = (
     "timestamp",
@@ -121,3 +123,58 @@ def object_change_receiver(sender, instance, **kwargs):
             record_object_changes([instance])
     except Exception:
         logger.warning("Failed to record ObjectChange %s as IP history", instance.pk, exc_info=True)
+
+
+def backfill_native_events(batch_size=1000) -> int:
+    """
+    Record every ipaddress ObjectChange that is not yet stored as a native event.
+
+    Already-recorded changes are skipped, so this is cheap to repeat. New events are added
+    to NetBox's global search cache as they are written.
+    """
+    from .choices import SourceTypeChoices
+    from .models import HistoricalIPEvent
+
+    recorded = (
+        HistoricalIPEvent.objects.filter(
+            source__source_type=SourceTypeChoices.NETBOX, source_record_id__regex=r"^[0-9]+$"
+        )
+        .annotate(change_id=Cast("source_record_id", BigIntegerField()))
+        .values("change_id")
+    )
+    pending = (
+        ObjectChange.objects.filter(changed_object_type__model="ipaddress")
+        .exclude(pk__in=recorded)
+        .select_related("changed_object_type")
+        .order_by("pk")
+    )
+    source, total, last_pk = None, 0, 0
+    while batch := list(pending.filter(pk__gt=last_pk)[:batch_size]):
+        source = source or get_native_source()
+        total += len(record_object_changes(batch, source=source))
+        last_pk = batch[-1].pk
+    return total
+
+
+@receiver(post_migrate, dispatch_uid="netbox_ip_history_backfill")
+def backfill_after_migrate(sender, using=DEFAULT_DB_ALIAS, apps=None, verbosity=1, stdout=None, **kwargs):
+    """Make NetBox history recorded before installation (or while tracking was off) visible after migrate."""
+    if getattr(sender, "name", None) != "netbox_ip_history" or using != DEFAULT_DB_ALIAS:
+        return
+    if not (
+        get_plugin_config("netbox_ip_history", "enable_native_event_tracking")
+        and get_plugin_config("netbox_ip_history", "backfill_on_migrate")
+    ):
+        return
+    try:
+        if apps is not None:
+            apps.get_model("netbox_ip_history", "HistoricalIPEvent")  # absent after "migrate ... zero"
+    except LookupError:
+        return
+    try:
+        recorded = backfill_native_events()
+    except Exception:
+        logger.warning("Backfilling native IP history after migrate failed", exc_info=True)
+        return
+    if recorded and verbosity and stdout is not None:
+        stdout.write(f"  netbox_ip_history: recorded {recorded} existing NetBox IP change(s) as history events\n")

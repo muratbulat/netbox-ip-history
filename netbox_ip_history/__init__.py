@@ -18,6 +18,8 @@ class NetBoxIPHistoryConfig(PluginConfig):
     default_settings = {
         "enable_global_search": True,
         "enable_native_event_tracking": True,
+        # Record pre-existing ipaddress ObjectChanges (and index them for search) on every migrate.
+        "backfill_on_migrate": True,
         # Uploads at or above this size are queued as a background job.
         "background_import_threshold": 5 * 1024 * 1024,
         "max_upload_size": 50 * 1024 * 1024,

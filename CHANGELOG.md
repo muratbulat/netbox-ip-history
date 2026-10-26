@@ -2,7 +2,14 @@
 
 All notable changes to this project are documented here.
 
-## [1.0.0] - Unreleased
+## [Unreleased]
+
+### Added
+- `migrate` records ipaddress `ObjectChange` rows that aren't yet history events (e.g. history
+  from before installation) and indexes them for global search, so no manual `reindex` is
+  needed. Already-recorded changes are skipped; disable with `backfill_on_migrate: False`.
+
+## [1.0.0] - 2026-10-26
 
 Re-engineered on NetBox's native plugin APIs. **Requires NetBox 4.7.0+ and Python 3.12+.**
 

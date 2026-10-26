@@ -78,3 +78,73 @@ class NativeTrackingTests(TestCase):
     def test_other_models_are_ignored(self):
         self.tracked(lambda: make_device("device-09"))
         self.assertFalse(HistoricalIPEvent.objects.exists())
+
+
+class BackfillOnMigrateTests(TestCase):
+    def setUp(self):
+        from django.apps import apps
+
+        self.app_config = apps.get_app_config("netbox_ip_history")
+        self.apps = apps
+
+    def migrate_signal(self, **kwargs):
+        from django.db.models.signals import post_migrate
+
+        with self.captureOnCommitCallbacks(execute=True):
+            post_migrate.send(sender=self.app_config, app_config=self.app_config, using="default",
+                              apps=self.apps, verbosity=0, interactive=False, plan=[], **kwargs)
+
+    def test_unrecorded_changes_are_recorded_and_searchable(self):
+        from extras.models import CachedValue
+
+        ip_change("192.0.2.90/24")
+        ip_change("192.0.2.91/24", minutes=1)
+        HistoricalIPEvent.objects.all().delete()  # history from before the plugin was installed
+        CachedValue.objects.all().delete()
+
+        self.migrate_signal()
+
+        events = HistoricalIPEvent.objects.filter(source__slug="netbox")
+        self.assertEqual(set(events.values_list("ip_address", flat=True)), {"192.0.2.90", "192.0.2.91"})
+        cached = CachedValue.objects.filter(object_type__model="historicalipevent", field="ip_address")
+        self.assertEqual(set(cached.values_list("value", flat=True)), {"192.0.2.90", "192.0.2.91"})
+
+    def test_recorded_changes_are_not_rewritten(self):
+        from netbox_ip_history.signals import backfill_native_events
+
+        ip_change("192.0.2.92/24")
+        before = HistoricalIPEvent.objects.get().last_updated
+        self.assertEqual(backfill_native_events(), 0)
+        self.assertEqual(HistoricalIPEvent.objects.get().last_updated, before)
+
+    def test_batches_cover_every_change(self):
+        from netbox_ip_history.signals import backfill_native_events
+
+        for i in range(5):
+            ip_change(f"192.0.2.{100 + i}/24", minutes=i)
+        HistoricalIPEvent.objects.all().delete()
+        self.assertEqual(backfill_native_events(batch_size=2), 5)
+
+    @override_settings(PLUGINS_CONFIG={"netbox_ip_history": {
+        "enable_native_event_tracking": True, "backfill_on_migrate": False,
+    }})
+    def test_backfill_can_be_disabled(self):
+        ip_change("192.0.2.93/24")
+        HistoricalIPEvent.objects.all().delete()
+        self.migrate_signal()
+        self.assertFalse(HistoricalIPEvent.objects.exists())
+
+    def test_skipped_for_other_apps_and_missing_tables(self):
+        from netbox_ip_history.signals import backfill_after_migrate
+
+        ip_change("192.0.2.94/24")
+        HistoricalIPEvent.objects.all().delete()
+        backfill_after_migrate(sender=self.apps.get_app_config("ipam"), using="default", apps=self.apps)
+
+        class StateWithoutPlugin:
+            def get_model(self, app_label, model_name):
+                raise LookupError(model_name)
+
+        backfill_after_migrate(sender=self.app_config, using="default", apps=StateWithoutPlugin())
+        backfill_after_migrate(sender=self.app_config, using="other", apps=self.apps)
+        self.assertFalse(HistoricalIPEvent.objects.exists())

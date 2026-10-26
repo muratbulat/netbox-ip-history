@@ -50,6 +50,7 @@ PLUGINS = ["netbox_ip_history"]
 PLUGINS_CONFIG = {
     "netbox_ip_history": {
         "enable_native_event_tracking": True,  # record NetBox IP changes as they happen
+        "backfill_on_migrate": True,           # record existing NetBox IP history on every migrate
         "enable_global_search": True,          # index events and sources in global search
         "background_import_threshold": 5 * 1024 * 1024,  # queue uploads at/above this size
         "max_upload_size": 50 * 1024 * 1024,
@@ -63,9 +64,14 @@ NetBox RQ worker):
 ```shell
 cd /opt/netbox/netbox
 python manage.py migrate
-python manage.py import_ip_history --native   # optional: backfill history recorded before installation
 sudo systemctl restart netbox netbox-rq
 ```
+
+`migrate` also records any IP address changes already in NetBox's change log that the plugin
+hasn't seen yet (for example, history from before installation) and adds them to global
+search, so no `reindex` is needed. On instances with a very large change log the first run
+can take a while; set `backfill_on_migrate` to `False` and run
+`python manage.py import_ip_history --native` at a convenient time instead.
 
 ## Usage
 
