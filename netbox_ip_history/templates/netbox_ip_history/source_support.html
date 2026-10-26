@@ -1,0 +1,38 @@
+{% extends 'generic/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Supported Formats" %}{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <div class="card-body text-secondary">
+      {% blocktrans trimmed %}
+        <strong>Native</strong> sources have a format-specific parser. <strong>Generic</strong> sources are parsed
+        as CSV, JSON or flat XML using common column names; use the source's field mapping for anything else.
+      {% endblocktrans %}
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>{% trans "Source" %}</th><th>{% trans "Type" %}</th><th>{% trans "Support" %}</th>
+            <th>{% trans "Formats" %}</th><th>{% trans "Data" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in matrix %}
+            <tr>
+              <td>{{ row.name }}</td>
+              <td class="font-monospace">{{ row.source_type }}</td>
+              <td>
+                <span class="badge text-bg-{% if row.support_level == 'native' %}green{% else %}secondary{% endif %}">{{ row.support_level|title }}</span>
+              </td>
+              <td>{{ row.formats|join:", "|upper }}</td>
+              <td>{{ row.capabilities|join:", " }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

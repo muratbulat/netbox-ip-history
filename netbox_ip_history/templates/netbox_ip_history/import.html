@@ -1,0 +1,74 @@
+{% extends 'generic/_base.html' %}
+{% load i18n form_helpers %}
+
+{% block title %}{% trans "Import IP History" %}{% endblock %}
+
+{% block control-buttons %}
+  <a href="{% url 'plugins:netbox_ip_history:source_support' %}" class="btn btn-outline-secondary">
+    <i class="mdi mdi-help-circle-outline" aria-hidden="true"></i> {% trans "Supported formats" %}
+  </a>
+{% endblock %}
+
+{% block content %}
+  {% if result %}
+    <div class="card mb-3">
+      <h2 class="card-header">{% trans "Dry run result" %} — {{ source }} / <span class="font-monospace">{{ filename }}</span></h2>
+      <div class="card-body">
+        <div class="alert alert-info mb-3">{% trans "Nothing was saved. Uncheck “Dry run” to import." %}</div>
+        <div class="row text-center mb-3">
+          <div class="col"><div class="text-secondary">{% trans "Records" %}</div><div class="h3">{{ result.total }}</div></div>
+          <div class="col"><div class="text-secondary">{% trans "Would be created" %}</div><div class="h3 text-success">{{ result.created }}</div></div>
+          <div class="col"><div class="text-secondary">{% trans "Duplicates" %}</div><div class="h3 text-warning">{{ result.duplicates }}</div></div>
+          <div class="col"><div class="text-secondary">{% trans "Errors" %}</div><div class="h3 text-danger">{{ result.error_count }}</div></div>
+        </div>
+        {% if result.preview %}
+          <h3 class="h5">{% trans "Preview" %}</h3>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>{% trans "Time" %}</th><th>{% trans "IP address" %}</th><th>{% trans "VRF" %}</th>
+                  <th>{% trans "Event" %}</th><th>{% trans "Hostname" %}</th><th>{% trans "Owner" %}</th>
+                  <th>{% trans "User" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in result.preview %}
+                  <tr>
+                    <td class="text-nowrap">{{ row.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td class="font-monospace">{{ row.ip_address }}{% if row.prefix_length %}/{{ row.prefix_length }}{% endif %}</td>
+                    <td>{{ row.vrf_name|default:"Global" }}</td>
+                    <td>{{ row.event_type }}</td>
+                    <td>{{ row.hostname|placeholder }}</td>
+                    <td>{{ row.owner_name|placeholder }}</td>
+                    <td>{{ row.source_username|placeholder }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+        {% if result.errors %}
+          <h3 class="h5">{% trans "Errors" %}</h3>
+          <ul class="list-unstyled font-monospace small text-danger mb-0">
+            {% for error in result.errors|slice:":50" %}<li>{% trans "Row" %} {{ error.row }}: {{ error.error }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="form-object-edit">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% for fieldset in form.fieldsets %}
+      {% render_fieldset form fieldset %}
+    {% endfor %}
+    <div class="text-end my-3">
+      <a href="{% url 'plugins:netbox_ip_history:importjob_list' %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
+      <button type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+    </div>
+  </form>
+{% endblock %}

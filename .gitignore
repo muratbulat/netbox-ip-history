@@ -1,0 +1,51 @@
+# Python / build
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Secrets, local settings and environment
+.env
+.env.*
+configuration.py
+local_settings.py
+*.pem
+*.key
+
+# Data exports, dumps and logs (never commit real IPAM/DCIM data)
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*.sqlite3
+*.log
+*.csv
+*.tsv
+*.json
+*.jsonl
+*.xml
+!tests/fixtures/*.csv
+!tests/fixtures/*.json
+!tests/fixtures/*.xml
+
+# IDE / editor / AI-agent artifacts
+.idea/
+.vscode/
+.c[l]aude/
+.cursor/
+.agents/
+.aider*
+.windsurf/
+.continue/
+C[L]AUDE.md
+AGENTS.md
+.DS_Store
+Thumbs.db

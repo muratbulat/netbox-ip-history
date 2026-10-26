@@ -1,0 +1,62 @@
+{% extends 'generic/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% if ip %}{{ ip }} — {% endif %}{% trans "Source Comparison" %}{% endblock %}
+
+{% block control-buttons %}
+  {% if ip %}
+    <a href="{% url 'plugins:netbox_ip_history:timeline' %}?ip={{ ip }}" class="btn btn-outline-primary">
+      <i class="mdi mdi-timeline-clock-outline" aria-hidden="true"></i> {% trans "Timeline" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="{{ form.ip.id_for_label }}">{{ form.ip.label }}</label>
+          {{ form.ip }}
+          {% for error in form.ip.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-12 col-md-2">
+          <button type="submit" class="btn btn-primary w-100">{% trans "Compare" %}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if ip %}
+    <div class="card">
+      <h2 class="card-header">{% trans "Latest state per source" %}</h2>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>{% trans "Source" %}</th><th>{% trans "Hostname" %}</th><th>{% trans "Owner" %}</th>
+              <th>{% trans "DNS name" %}</th><th>{% trans "MAC address" %}</th><th>{% trans "VRF" %}</th>
+              <th>{% trans "Status" %}</th><th>{% trans "Last seen" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>{% if row.native %}<span class="badge text-bg-primary">NetBox</span>{% else %}{{ row.source }}{% endif %}</td>
+                <td>{{ row.hostname|placeholder }}</td>
+                <td>{{ row.owner|placeholder }}</td>
+                <td>{{ row.dns_name|placeholder }}</td>
+                <td class="font-monospace">{{ row.mac_address|placeholder }}</td>
+                <td>{{ row.vrf }}</td>
+                <td>{{ row.status|placeholder }}</td>
+                <td class="text-nowrap">{{ row.last_seen|date:"Y-m-d H:i" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="text-center text-muted">{% trans "No source has a record of this address." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

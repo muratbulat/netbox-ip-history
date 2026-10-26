@@ -1,0 +1,16 @@
+{% extends 'generic/object.html' %}
+{% load i18n %}
+
+{% block content %}
+  <div class="card">
+    <h2 class="card-header">
+      {% trans "IP History" %}
+      <div class="card-actions">
+        <a href="{% url 'plugins:netbox_ip_history:timeline' %}?ip={{ object.address.ip }}" class="btn btn-ghost-primary btn-sm">
+          <i class="mdi mdi-filter-variant" aria-hidden="true"></i> {% trans "Filter & export" %}
+        </a>
+      </div>
+    </h2>
+    {% include 'netbox_ip_history/inc/timeline_table.html' %}
+  </div>
+{% endblock %}

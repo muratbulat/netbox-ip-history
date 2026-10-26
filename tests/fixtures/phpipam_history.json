@@ -1,0 +1,5 @@
+{"code": 200, "success": true, "data": [
+  {"ip": "203.0.113.5", "date": "2026-02-01T11:30:00+00:00", "hostname": "device-01.example.com", "action": "Added", "username": "admin", "mac": "00:00:5e:00:53:01", "subnet": "24"},
+  {"ip_addr": "3405803781", "editDate": "2026-03-04T17:18:00+00:00", "hostname": "device-01.example.com", "action": "Edited", "username": "admin", "note": "moved"},
+  {"ip": "203.0.113.5", "date": "2026-04-04T17:18:00+00:00", "hostname": "device-01.example.com", "action": "Deleted", "username": "admin"}
+]}

@@ -1,0 +1,8 @@
+header-hostrecord,fqdn*,addresses,ipv6_addresses,view,comment
+hostrecord,device-01.example.com,"192.0.2.40,192.0.2.41",2001:db8::40,default,lab host
+header-fixedaddress,ip_address*,mac_address,name,network_view,comment
+fixedaddress,192.0.2.42,00:00:5e:00:53:42,device-02.example.com,default,
+header-arecord,fqdn*,address*,view
+arecord,device-03.example.com,192.0.2.43,default
+header-networkcontainer,address*,netmask*
+networkcontainer,192.0.2.0,255.255.255.0

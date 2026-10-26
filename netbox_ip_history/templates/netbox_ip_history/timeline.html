@@ -1,0 +1,55 @@
+{% extends 'generic/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% if ip %}{{ ip }} — {% endif %}{% trans "IP History" %}{% endblock %}
+
+{% block control-buttons %}
+  {% if ip and events %}
+    <a href="?{{ request.GET.urlencode }}&export=csv" class="btn btn-purple">
+      <i class="mdi mdi-download" aria-hidden="true"></i> CSV
+    </a>
+    <a href="?{{ request.GET.urlencode }}&export=json" class="btn btn-purple">
+      <i class="mdi mdi-download" aria-hidden="true"></i> JSON
+    </a>
+    <a href="{% url 'plugins:netbox_ip_history:compare' %}?ip={{ ip }}" class="btn btn-outline-primary">
+      <i class="mdi mdi-compare-horizontal" aria-hidden="true"></i> {% trans "Compare sources" %}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card mb-3">
+    <h2 class="card-header">{% trans "Search" %}</h2>
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        {% for field in form %}
+          <div class="col-12 col-md-{% if field.name == 'ip' %}4{% else %}2{% endif %}">
+            {% if field.field.widget.input_type == 'checkbox' %}
+              <div class="form-check">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+            {% else %}
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+        <div class="col-12 col-md-2">
+          <button type="submit" class="btn btn-primary w-100"><i class="mdi mdi-magnify" aria-hidden="true"></i> {% trans "Search" %}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if ip %}
+    <div class="row mb-3">
+      <div class="col-6 col-md-3"><div class="card card-body"><div class="text-secondary">{% trans "Events" %}</div><div class="h2 mb-0">{{ events|length }}</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-body"><div class="text-secondary">{% trans "Sources" %}</div><div class="h2 mb-0">{{ sources|length }}</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-body"><div class="text-secondary">{% trans "First seen" %}</div><div class="h4 mb-0">{{ first_seen|date:"Y-m-d H:i"|placeholder }}</div></div></div>
+      <div class="col-6 col-md-3"><div class="card card-body"><div class="text-secondary">{% trans "Last seen" %}</div><div class="h4 mb-0">{{ last_seen|date:"Y-m-d H:i"|placeholder }}</div></div></div>
+    </div>
+    <div class="card">
+      <h2 class="card-header">{% trans "Timeline" %} <span class="font-monospace">{{ ip }}</span></h2>
+      {% include 'netbox_ip_history/inc/timeline_table.html' %}
+    </div>
+  {% endif %}
+{% endblock %}
