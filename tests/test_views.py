@@ -310,3 +310,44 @@ class ExportSanitizationTests(TestCase):
 
         exported = self.client.get(url("timeline"), {"ip": "198.51.100.9", "export": "json"}).json()[0]
         self.assertEqual(exported["hostname"], payloads["hostname"])
+
+
+class TimelineAPIFilterTests(TestCase):
+    user_permissions = ["netbox_ip_history.view_historicalipevent", "core.view_objectchange"]
+
+    def setUp(self):
+        super().setUp()
+        ip_change("192.0.2.70/24", user_name="alice", minutes=0)  # 2026-01-01, recorded as an event
+        late = ip_change("192.0.2.70/24", action="update", user_name="bob", pre={"address": "192.0.2.70/24"},
+                         post={"address": "192.0.2.70/24", "dns_name": "device-70.example.com"}, minutes=60 * 24 * 40)
+        HistoricalIPEvent.objects.filter(source_record_id=str(late.pk)).delete()  # live ObjectChange only
+
+    def api(self, **params):
+        return self.client.get(reverse("plugins-api:netbox_ip_history-api:timeline"), {"ip": "192.0.2.70", **params})
+
+    def test_entries_report_their_kind(self):
+        kinds = {entry["username"]: entry["kind"] for entry in self.api().json()}
+        self.assertEqual(kinds, {"alice": "event", "bob": "objectchange"})
+
+    def test_ui_filters_are_available(self):
+        def users(**params):
+            return [entry["username"] for entry in self.api(**params).json()]
+
+        self.assertEqual(users(date_from="2026-02-01"), ["bob"])
+        self.assertEqual(users(date_to="2026-01-31"), ["alice"])
+        self.assertEqual(users(username="ali"), ["alice"])
+        self.assertEqual(users(owner="device-70"), ["bob"])
+        self.assertEqual(self.api(date_from="31/01/2026").status_code, 400)
+
+    def test_openapi_schema_documents_filters_and_kind(self):
+        from django.urls import include, path
+        from drf_spectacular.generators import SchemaGenerator
+
+        patterns = [path("api/plugins/ip-history/", include("netbox_ip_history.api.urls"))]
+        schema = SchemaGenerator(patterns=patterns).get_schema(request=None, public=True)
+        operation = schema["paths"]["/api/plugins/ip-history/timeline/"]["get"]
+        params = {p["name"] for p in operation["parameters"]}
+        self.assertTrue({"ip", "vrf", "date_from", "date_to", "owner", "username", "oldest_first"} <= params)
+        entry = operation["responses"]["200"]["content"]["application/json"]["schema"]["items"]["$ref"]
+        properties = schema["components"]["schemas"][entry.rsplit("/", 1)[1]]["properties"]
+        self.assertIn("kind", properties)

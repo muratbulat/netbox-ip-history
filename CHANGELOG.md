@@ -38,6 +38,10 @@ All notable changes to this project are documented here.
   if any created event falls outside the user's *add* constraints (also for background
   imports), and a rollback is refused if any event of the job falls outside the user's
   *delete* constraints. Previously both acted on every event regardless of constraints.
+- The REST timeline endpoint accepts the same filters as the UI: `date_from`, `date_to`
+  (YYYY-MM-DD; invalid dates return 400), `owner` and `username`, all documented in the OpenAPI
+  schema. Each entry has a `kind` (`event` or `objectchange`) telling which object its `id`
+  refers to.
 
 ### Security
 - Timeline CSV exports prefix values starting with `=`, `+`, `-`, `@`, tab or carriage return

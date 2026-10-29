@@ -60,7 +60,11 @@ class HistoricalIPEventSerializer(NetBoxModelSerializer):
 
 
 class TimelineEntrySerializer(serializers.Serializer):
-    id = serializers.IntegerField(source="pk")
+    id = serializers.IntegerField(source="pk", help_text="Primary key of the object named by kind")
+    kind = serializers.ChoiceField(
+        choices=("event", "objectchange"),
+        help_text="event: a HistoricalIPEvent; objectchange: a core.ObjectChange not yet recorded as an event",
+    )
     url = serializers.CharField()
     timestamp = serializers.DateTimeField()
     native = serializers.BooleanField()

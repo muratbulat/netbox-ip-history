@@ -108,7 +108,7 @@ Supported Formats* lists every source type and whether it has a dedicated parser
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/plugins/ip-history/timeline/?ip=192.0.2.10[&vrf=Global]` | Merged timeline for one address |
+| `GET /api/plugins/ip-history/timeline/?ip=192.0.2.10[&vrf=Global&date_from=2026-01-01&owner=...]` | Merged timeline for one address; each entry's `kind` says whether `id` is an event or an ObjectChange |
 | `GET /api/plugins/ip-history/compare/?ip=192.0.2.10` | Latest state per source |
 | `/api/plugins/ip-history/events/` | Historical events (read, tag, delete) |
 | `/api/plugins/ip-history/import-jobs/` | Import jobs (read, tag, delete) |

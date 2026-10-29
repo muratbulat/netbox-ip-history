@@ -479,6 +479,7 @@ def _matches(entry: dict, vrf: str, event_type: str, owner: str, vrf_exact: bool
 def _entry_from_event(event: HistoricalIPEvent) -> dict[str, Any]:
     return {
         "pk": event.pk,
+        "kind": "event",
         "url": event.get_absolute_url(),
         "timestamp": event.timestamp,
         "event_type": event.event_type,
@@ -538,6 +539,7 @@ def native_events(ip_address, user=None, date_from=None, date_to=None, username=
         fields = describe_change(change, lookup)
         entries.append({
             "pk": change.pk,
+            "kind": "objectchange",
             "url": change.get_absolute_url(),
             "timestamp": change.time,
             "event_type": fields["event_type"],

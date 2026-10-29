@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.utils.translation import gettext as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -61,6 +63,16 @@ class _IPQueryView(APIView):
             raise ValidationError({"ip": _("A valid IPv4 or IPv6 address is required.")}) from exc
 
 
+def _date_param(params, name):
+    value = params.get(name, "").strip()
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationError({name: _("Use the YYYY-MM-DD date format.")}) from exc
+
+
 class TimelineView(_IPQueryView):
     """Merged native and imported history for one IP address, newest first."""
 
@@ -70,6 +82,10 @@ class TimelineView(_IPQueryView):
             OpenApiParameter("vrf", OpenApiTypes.STR, description="VRF name/RD, or 'Global'"),
             OpenApiParameter("source", OpenApiTypes.STR),
             OpenApiParameter("event_type", OpenApiTypes.STR),
+            OpenApiParameter("date_from", OpenApiTypes.DATE, description="Events on or after this date (YYYY-MM-DD)"),
+            OpenApiParameter("date_to", OpenApiTypes.DATE, description="Events on or before this date (YYYY-MM-DD)"),
+            OpenApiParameter("owner", OpenApiTypes.STR, description="Owner, hostname, device or VM name contains"),
+            OpenApiParameter("username", OpenApiTypes.STR, description="Acting/source user name contains"),
             OpenApiParameter("oldest_first", OpenApiTypes.BOOL),
         ],
         responses={200: TimelineEntrySerializer(many=True)},
@@ -82,6 +98,10 @@ class TimelineView(_IPQueryView):
             vrf=params.get("vrf", ""),
             source=params.get("source", ""),
             event_type=params.get("event_type", ""),
+            date_from=_date_param(params, "date_from"),
+            date_to=_date_param(params, "date_to"),
+            owner=params.get("owner", ""),
+            username=params.get("username", ""),
             oldest_first=params.get("oldest_first", "").lower() in ("1", "true", "yes"),
             user=request.user,
         )
