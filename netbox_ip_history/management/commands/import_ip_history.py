@@ -2,6 +2,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
+from ...importers.base import parse_delimiter
 from ...models import ImportSource
 from ...services.import_service import build_importer, run_import
 
@@ -18,7 +19,7 @@ class Command(BaseCommand):
         parser.add_argument("--source", help="Slug of the ImportSource to import into")
         parser.add_argument("--file", type=Path, help="Path of the export file")
         parser.add_argument("--format", choices=("csv", "json", "xml"), default="csv")
-        parser.add_argument("--delimiter", default=",")
+        parser.add_argument("--delimiter", default=",", help='One character, or "tab" for tab-separated files')
         parser.add_argument("--dry-run", action="store_true", help="Validate and count without saving")
         parser.add_argument(
             "--native", action="store_true", help="Record existing ipaddress ObjectChanges as native events"
@@ -38,7 +39,11 @@ class Command(BaseCommand):
         except OSError as exc:
             raise CommandError(str(exc)) from exc
 
-        importer = build_importer(source, data, format=options["format"], delimiter=options["delimiter"])
+        try:
+            delimiter = parse_delimiter(options["delimiter"])
+        except ValueError as exc:
+            raise CommandError(str(exc)) from exc
+        importer = build_importer(source, data, format=options["format"], delimiter=delimiter)
         result, job = run_import(
             source, importer, dry_run=options["dry_run"], filename=options["file"].name, data=data
         )

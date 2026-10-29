@@ -9,6 +9,7 @@ from utilities.forms.widgets import BulkEditNullBooleanSelect, DateTimePicker
 
 from .choices import DateOrderChoices, EventTypeChoices, ImportStatusChoices, SourceTypeChoices
 from .importers import importer_for
+from .importers.base import parse_delimiter
 from .models import HistoricalIPEvent, ImportJob, ImportSource
 from .services.normalize import RecordError, normalize_ip
 
@@ -206,7 +207,14 @@ class ImportForm(BootstrapFormMixin, forms.Form):
     format = forms.ChoiceField(
         choices=(("csv", "CSV"), ("json", "JSON"), ("xml", "XML")), initial="csv", label=_("Format")
     )
-    delimiter = forms.CharField(max_length=1, initial=",", required=False, label=_("CSV delimiter"))
+    delimiter = forms.CharField(
+        max_length=3,
+        initial=",",
+        required=False,
+        strip=False,
+        label=_("CSV delimiter"),
+        help_text=_('One character; "tab" (or \\t) for tab-separated files.'),
+    )
     dry_run = forms.BooleanField(
         initial=True,
         required=False,
@@ -228,6 +236,12 @@ class ImportForm(BootstrapFormMixin, forms.Form):
         super().__init__(*args, **kwargs)
         sources = ImportSource.objects.filter(enabled=True).exclude(source_type=SourceTypeChoices.NETBOX)
         self.fields["source"].queryset = sources.restrict(user, "view") if user is not None else sources
+
+    def clean_delimiter(self):
+        try:
+            return parse_delimiter(self.cleaned_data.get("delimiter"))
+        except ValueError as exc:
+            raise forms.ValidationError(str(exc)) from exc
 
     def clean_file(self):
         upload = self.cleaned_data["file"]

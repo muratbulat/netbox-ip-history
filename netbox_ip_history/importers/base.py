@@ -11,6 +11,7 @@ __all__ = (
     "apply_aliases",
     "clean_key",
     "decode_stream",
+    "parse_delimiter",
 )
 
 
@@ -80,6 +81,20 @@ def apply_aliases(row: dict[str, Any], mapping: dict[str, str], aliases: dict[st
                 record[target] = value
                 break
     return record
+
+
+def parse_delimiter(value: str | None) -> str:
+    """
+    CSV delimiter from user input: one character, or "tab" / "\\t" for a TAB (which a text
+    input can't easily hold). Empty means comma. Raises ValueError for anything else.
+    """
+    if value is None or value == "":
+        return ","
+    if value == "\t" or value.strip().lower() in ("tab", "\\t"):
+        return "\t"
+    if len(value) != 1:
+        raise ValueError("Use a single character, or \"tab\" for tab-separated files.")
+    return value
 
 
 def decode_stream(stream) -> str:

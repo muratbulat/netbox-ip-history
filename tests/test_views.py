@@ -351,3 +351,32 @@ class TimelineAPIFilterTests(TestCase):
         entry = operation["responses"]["200"]["content"]["application/json"]["schema"]["items"]["$ref"]
         properties = schema["components"]["schemas"][entry.rsplit("/", 1)[1]]["properties"]
         self.assertIn("kind", properties)
+
+
+class DelimiterTests(TestCase):
+    user_permissions = [
+        "netbox_ip_history.view_importsource",
+        "netbox_ip_history.add_historicalipevent",
+        "netbox_ip_history.add_importjob",
+    ]
+
+    def test_tab_delimited_upload(self):
+        source = make_source(source_timezone="UTC")
+        tsv = b"ip\ttimestamp\tevent_type\n198.51.100.30\t2025-01-01T00:00:00+00:00\tcreated\n"
+        for delimiter in ("tab", "TAB", "\\t", "\t"):
+            with self.subTest(delimiter=delimiter):
+                response = self.client.post(
+                    url("import"),
+                    {"source": source.pk, "format": "csv", "delimiter": delimiter, "dry_run": "on",
+                     "file": SimpleUploadedFile("h.tsv", tsv)},
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["result"].created, 1)
+
+    def test_multi_character_delimiter_is_rejected(self):
+        source = make_source(source_timezone="UTC")
+        response = self.client.post(
+            url("import"),
+            {"source": source.pk, "format": "csv", "delimiter": ";;", "file": SimpleUploadedFile("h.csv", CSV)},
+        )
+        self.assertContains(response, "single character")
