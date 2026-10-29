@@ -22,7 +22,7 @@ from . import filtersets, forms, tables
 from .choices import ImportStatusChoices
 from .importers import support_matrix
 from .jobs import ImportHistoryJobRunner
-from .models import HistoricalIPEvent, ImportJob, ImportSource
+from .models import GLOBAL_VRF, HistoricalIPEvent, ImportJob, ImportSource
 from .services.import_service import build_importer, rollback_job, run_import
 from .services.timeline import compare_sources, get_timeline
 
@@ -282,7 +282,12 @@ class IPAddressHistoryView(generic.ObjectView):
     tab = ViewTab(label=_("IP History"), permission=f"{PLUGIN}.view_historicalipevent", weight=5000)
 
     def get_extra_context(self, request, instance):
-        return {"events": get_timeline(str(instance.address.ip), user=request.user)}
+        # Scoped to this address's own VRF: the same address in other VRFs is a different object.
+        vrf = instance.vrf.name if instance.vrf else GLOBAL_VRF
+        return {
+            "events": get_timeline(str(instance.address.ip), vrf=vrf, vrf_exact=True, user=request.user),
+            "vrf": vrf,
+        }
 
 
 #

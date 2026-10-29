@@ -214,3 +214,28 @@ class DuplicateUploadWarningTests(TestCase):
         self.client.post(url("import"), {**payload, "file": SimpleUploadedFile("h.csv", CSV)})
         response = self.client.post(url("import"), {**payload, "file": SimpleUploadedFile("h.csv", CSV)}, follow=True)
         self.assertContains(response, "already imported")
+
+
+class IPAddressTabScopeTests(TestCase):
+    user_permissions = ["ipam.view_ipaddress", "netbox_ip_history.view_historicalipevent", "core.view_objectchange"]
+
+    def test_tab_shows_only_the_addresses_vrf(self):
+        import uuid
+
+        from django.test import RequestFactory
+        from ipam.models import VRF
+        from netbox.context_managers import event_tracking
+
+        request = RequestFactory().get("/")
+        request.id, request.user = uuid.uuid4(), self.user
+        vrf_a, vrf_ab = VRF.objects.create(name="VRF-A"), VRF.objects.create(name="VRF-AB")
+        with event_tracking(request):
+            ip = IPAddress.objects.create(address="198.51.100.77/24", vrf=vrf_a)
+            IPAddress.objects.create(address="198.51.100.77/24", vrf=vrf_ab)
+            IPAddress.objects.create(address="198.51.100.77/24")
+
+        response = self.client.get(reverse("ipam:ipaddress_ip_history", args=[ip.pk]))
+        self.assertEqual([e["vrf"] for e in response.context["events"]], ["VRF-A"])
+
+        detail = self.client.get(ip.get_absolute_url())
+        self.assertContains(detail, "?ip=198.51.100.77&amp;vrf=VRF-A")

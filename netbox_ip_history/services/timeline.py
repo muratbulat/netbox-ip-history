@@ -455,11 +455,13 @@ def describe_change(change, lookup: ObjectLookup | None = None) -> dict[str, Any
     }
 
 
-def _matches(entry: dict, vrf: str, event_type: str, owner: str) -> bool:
+def _matches(entry: dict, vrf: str, event_type: str, owner: str, vrf_exact: bool = False) -> bool:
     if vrf:
         if vrf.lower() == GLOBAL_VRF.lower():
             if entry["vrf"] != GLOBAL_VRF:
                 return False
+        elif vrf_exact and vrf.lower() != entry["vrf"].lower():
+            return False
         elif vrf.lower() not in entry["vrf"].lower():
             return False
     if event_type and entry["event_type"] != event_type:
@@ -566,12 +568,14 @@ def get_timeline(
     owner="",
     username="",
     user=None,
+    vrf_exact=False,
 ):
     """
     Merged, sorted timeline for one IP address: stored HistoricalIPEvents plus native
     ObjectChanges not yet recorded as events. Invalid IPs yield an empty timeline.
 
-    ``vrf="Global"`` matches events outside any VRF, however the source recorded that.
+    ``vrf="Global"`` matches events outside any VRF, however the source recorded that. Other
+    ``vrf`` values match VRF names or RDs as a substring, or exactly with ``vrf_exact``.
     When ``user`` is given, results are restricted to objects the user may view.
     """
     try:
@@ -583,6 +587,8 @@ def get_timeline(
     queryset = queryset.filter(ip_address=canonical_ip).select_related("source")
     if vrf.lower() == GLOBAL_VRF.lower():
         queryset = queryset.filter((Q(vrf_name="") | Q(vrf_name__iexact=GLOBAL_VRF)) & Q(vrf_rd=""))
+    elif vrf and vrf_exact:
+        queryset = queryset.filter(Q(vrf_name__iexact=vrf) | Q(vrf_rd__iexact=vrf))
     elif vrf:
         queryset = queryset.filter(Q(vrf_name__icontains=vrf) | Q(vrf_rd__icontains=vrf))
     if source:
@@ -613,7 +619,7 @@ def get_timeline(
             for entry in native_events(
                 canonical_ip, user=user, date_from=date_from, date_to=date_to, username=username, exclude_pks=recorded
             )
-            if _matches(entry, vrf, event_type, owner)
+            if _matches(entry, vrf, event_type, owner, vrf_exact)
         )
 
     entries.sort(key=lambda entry: entry["timestamp"], reverse=not oldest_first)

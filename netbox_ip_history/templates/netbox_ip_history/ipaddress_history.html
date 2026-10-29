@@ -4,9 +4,9 @@
 {% block content %}
   <div class="card">
     <h2 class="card-header">
-      {% trans "IP History" %}
+      {% trans "IP History" %} <span class="text-secondary fs-5">({{ vrf }})</span>
       <div class="card-actions">
-        <a href="{% url 'plugins:netbox_ip_history:timeline' %}?ip={{ object.address.ip }}" class="btn btn-ghost-primary btn-sm">
+        <a href="{% url 'plugins:netbox_ip_history:timeline' %}?ip={{ object.address.ip }}&amp;vrf={{ vrf|urlencode }}" class="btn btn-ghost-primary btn-sm">
           <i class="mdi mdi-filter-variant" aria-hidden="true"></i> {% trans "Filter & export" %}
         </a>
       </div>
