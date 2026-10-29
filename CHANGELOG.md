@@ -42,6 +42,8 @@ All notable changes to this project are documented here.
   (YYYY-MM-DD; invalid dates return 400), `owner` and `username`, all documented in the OpenAPI
   schema. Each entry has a `kind` (`event` or `objectchange`) telling which object its `id`
   refers to.
+- Imported prefix lengths are validated per address family (a `64` on an IPv4 address is no
+  longer stored) and IPv4 dotted netmasks such as `255.255.255.0` are accepted.
 
 ### Security
 - Timeline CSV exports prefix values starting with `=`, `+`, `-`, `@`, tab or carriage return

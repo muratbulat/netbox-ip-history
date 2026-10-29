@@ -9,7 +9,15 @@ from django.utils import timezone
 from ..choices import ImportStatusChoices
 from ..importers import importer_for
 from ..models import HistoricalIPEvent, ImportJob, ImportSource
-from .normalize import RecordError, fingerprint, normalize_event_type, normalize_ip, normalize_timestamp, normalize_vrf
+from .normalize import (
+    RecordError,
+    fingerprint,
+    normalize_event_type,
+    normalize_ip,
+    normalize_prefix_length,
+    normalize_timestamp,
+    normalize_vrf,
+)
 
 __all__ = (
     "BATCH_SIZE",
@@ -66,14 +74,14 @@ class ImportResult:
 
 def normalize_record(source: ImportSource, record: dict[str, Any], default_timestamp=None) -> dict[str, Any]:
     ip, prefix = normalize_ip(record.get("ip_address", record.get("ip")))
-    raw_prefix = str(record.get("prefix_length") or "").strip()
+    prefix_length = normalize_prefix_length(record.get("prefix_length"), ip)
     normalized = {k: v for k, v in record.items() if k in _EVENT_FIELDS}
     for key, value in normalized.items():
         if isinstance(value, str):
             normalized[key] = value.strip()[: _MAX_LENGTHS.get(key)]
     normalized.update(
         ip_address=ip,
-        prefix_length=int(raw_prefix) if raw_prefix.isdigit() and int(raw_prefix) <= 128 else prefix,
+        prefix_length=prefix if prefix_length is None else prefix_length,
         timestamp=normalize_timestamp(record.get("timestamp"), source.source_timezone, default_timestamp),
         undated=not str(record.get("timestamp") or "").strip(),
         event_type=normalize_event_type(record.get("event_type") or record.get("source_event_type")),

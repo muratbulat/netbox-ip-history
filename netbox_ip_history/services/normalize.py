@@ -14,6 +14,7 @@ __all__ = (
     "fingerprint",
     "normalize_event_type",
     "normalize_ip",
+    "normalize_prefix_length",
     "normalize_timestamp",
     "normalize_vrf",
 )
@@ -87,6 +88,28 @@ def normalize_ip(value: Any) -> tuple[str, int | None]:
         return ipaddress.ip_address(text).compressed, None
     except ValueError as exc:
         raise RecordError(f"Invalid IP address: {text}") from exc
+
+
+def normalize_prefix_length(value: Any, ip: str) -> int | None:
+    """
+    Prefix length for ``ip`` from a length ("24") or an IPv4 dotted netmask ("255.255.255.0").
+
+    Returns None for anything not valid for the address family (e.g. 64 for an IPv4 address,
+    or a non-contiguous mask), so callers can fall back to another source of the prefix.
+    """
+    text = _clean(value)
+    if not text:
+        return None
+    version = ipaddress.ip_address(ip).version
+    if text.isdigit():
+        length = int(text)
+        return length if length <= (32 if version == 4 else 128) else None
+    if version == 4 and text.count(".") == 3:
+        try:
+            return ipaddress.IPv4Network(f"0.0.0.0/{text}").prefixlen
+        except ValueError:
+            return None
+    return None
 
 
 def normalize_vrf(value: Any) -> str:

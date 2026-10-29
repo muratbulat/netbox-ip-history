@@ -167,3 +167,31 @@ class SnapshotIdempotencyTests(TestCase):
         self.assertEqual(len(dry.warnings), 1)
         other = make_source("other-source", source_timezone="UTC")
         self.assertEqual(self.run_bytes(other, data)[0].warnings, [])
+
+
+class PrefixLengthTests(TestCase):
+    def setUp(self):
+        self.source = make_source(source_timezone="UTC")
+
+    def prefix(self, ip, value):
+        from netbox_ip_history.services.import_service import normalize_record
+
+        record = {"ip_address": ip, "timestamp": "2025-01-01T00:00:00+00:00", "prefix_length": value}
+        return normalize_record(self.source, record)["prefix_length"]
+
+    def test_prefix_length_is_clamped_by_address_family(self):
+        self.assertEqual(self.prefix("192.0.2.1", "24"), 24)
+        self.assertEqual(self.prefix("192.0.2.1", "32"), 32)
+        self.assertIsNone(self.prefix("192.0.2.1", "64"))
+        self.assertEqual(self.prefix("192.0.2.1/26", "64"), 26)  # falls back to the address's own prefix
+        self.assertEqual(self.prefix("2001:db8::1", "64"), 64)
+        self.assertIsNone(self.prefix("2001:db8::1", "129"))
+
+    def test_dotted_netmasks_are_accepted(self):
+        self.assertEqual(self.prefix("192.0.2.1", "255.255.255.0"), 24)
+        self.assertEqual(self.prefix("192.0.2.1", "255.255.255.252"), 30)
+        self.assertIsNone(self.prefix("192.0.2.1", "255.0.255.0"))  # not contiguous
+        self.assertIsNone(self.prefix("2001:db8::1", "255.255.255.0"))
+
+    def test_zero_length_prefix_is_kept(self):
+        self.assertEqual(self.prefix("192.0.2.1/24", "0"), 0)
