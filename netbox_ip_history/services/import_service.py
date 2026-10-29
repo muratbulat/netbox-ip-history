@@ -41,6 +41,7 @@ class ImportResult:
     created: int = 0
     duplicates: int = 0
     errors: list[dict[str, Any]] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     preview: list[dict[str, Any]] = field(default_factory=list)
 
     @property
@@ -53,6 +54,7 @@ class ImportResult:
             "created": self.created,
             "duplicates": self.duplicates,
             "errors": self.error_count,
+            "warnings": self.warnings,
             "dry_run": self.dry_run,
         }
 
@@ -68,12 +70,31 @@ def normalize_record(source: ImportSource, record: dict[str, Any], default_times
         ip_address=ip,
         prefix_length=int(raw_prefix) if raw_prefix.isdigit() and int(raw_prefix) <= 128 else prefix,
         timestamp=normalize_timestamp(record.get("timestamp"), source.source_timezone, default_timestamp),
+        snapshot=not str(record.get("timestamp") or "").strip(),
         event_type=normalize_event_type(record.get("event_type") or record.get("source_event_type")),
         vrf_name=normalize_vrf(record.get("vrf_name")),
         raw_data=record.get("raw_data") or {k: v for k, v in record.items() if k != "raw_data"},
     )
     normalized["fingerprint"] = fingerprint(source.slug, normalized)
     return normalized
+
+
+def _previous_import_warning(source: ImportSource, file_hash: str, exclude_pk=None) -> str | None:
+    """Warn when this exact file (by SHA-256) was already imported into the same source."""
+    if not file_hash:
+        return None
+    previous = (
+        ImportJob.objects.filter(source=source, file_hash=file_hash, status=ImportStatusChoices.COMPLETED)
+        .exclude(pk=exclude_pk)
+        .order_by("-started")
+        .first()
+    )
+    if previous is None:
+        return None
+    return (
+        f"This file was already imported into {source} as import job #{previous.pk} "
+        f"on {previous.started:%Y-%m-%d %H:%M}; matching records are counted as duplicates."
+    )
 
 
 def build_importer(source: ImportSource, data: bytes, format: str = "csv", delimiter: str = ","):
@@ -156,6 +177,9 @@ def run_import(
     partial import behind.
     """
     result = ImportResult(dry_run=dry_run)
+    file_hash = (job.file_hash if job is not None else "") or (hashlib.sha256(data).hexdigest() if data else "")
+    if warning := _previous_import_warning(source, file_hash, exclude_pk=job.pk if job is not None else None):
+        result.warnings.append(warning)
     if dry_run:
         _process(source, importer, None, result)
         return result, None
@@ -165,7 +189,7 @@ def run_import(
             source=source,
             user=user,
             filename=filename[:255],
-            file_hash=hashlib.sha256(data).hexdigest() if data else "",
+            file_hash=file_hash,
             file_size=len(data) if data else None,
         )
     try:

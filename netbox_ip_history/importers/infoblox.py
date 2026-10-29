@@ -13,6 +13,7 @@ import time.
 import csv
 import io
 
+from ..services.normalize import RecordError, normalize_ip
 from .base import BaseImporter, Capability, SupportLevel, clean_key
 
 __all__ = ("InfobloxImporter",)
@@ -43,7 +44,7 @@ class InfobloxImporter(BaseImporter):
     def iter_records(self):
         headers: dict[str, list[str]] = {}
         reader = csv.reader(io.StringIO(self.read_text()))
-        for line_no, cells in enumerate(reader, start=1):
+        for cells in reader:
             if not cells or not cells[0].strip():
                 continue
             kind = cells[0].strip().lower()
@@ -53,14 +54,18 @@ class InfobloxImporter(BaseImporter):
             if kind not in _SUPPORTED_OBJECTS or kind not in headers:
                 continue
             row = dict(zip(headers[kind], (c.strip() for c in cells[1:]), strict=False))
-            yield from self._records_for(kind, row, line_no)
+            yield from self._records_for(kind, row)
 
-    def _records_for(self, kind: str, row: dict[str, str], line_no: int):
+    def _records_for(self, kind: str, row: dict[str, str]):
         addresses = []
         for column in _ADDRESS_COLUMNS:
             addresses.extend(a.strip() for a in (row.get(column) or "").split(",") if a.strip())
         name = next((row[c] for c in _NAME_COLUMNS if row.get(c)), "")
-        for index, address in enumerate(addresses):
+        for address in addresses:
+            try:
+                canonical = normalize_ip(address)[0]
+            except RecordError:
+                canonical = address
             record = {
                 "ip_address": address,
                 "event_type": "imported",
@@ -71,7 +76,8 @@ class InfobloxImporter(BaseImporter):
                 "description": row.get("comment", ""),
                 "vrf_name": row.get("network_view", ""),
                 "source_scope_identifier": row.get("view", ""),
-                "source_record_id": f"{kind}:{line_no}:{index}",
+                # Stable across exports: never derived from the row's position in the file.
+                "source_record_id": f"{kind}:{canonical}:{name}",
                 "raw_data": {"object": kind, **row},
             }
             yield {k: v for k, v in record.items() if v not in (None, "")}

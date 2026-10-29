@@ -150,7 +150,7 @@ def normalize_event_type(value: Any) -> str:
 
 #: Bump whenever the fingerprint inputs change, and add a data migration that recomputes the
 #: fingerprints of imported events with a frozen copy of the new algorithm.
-FINGERPRINT_VERSION = 2
+FINGERPRINT_VERSION = 3
 
 #: Event fields identifying an imported record, in hashing order.
 FINGERPRINT_FIELDS = (
@@ -179,6 +179,16 @@ def _fingerprint_value(value: Any) -> str:
 
 
 def fingerprint(source: str, record: dict[str, Any]) -> str:
-    """Stable identity of an imported record; equal fingerprints within a source are duplicates."""
-    values = (f"v{FINGERPRINT_VERSION}", source, *(_fingerprint_value(record.get(f)) for f in FINGERPRINT_FIELDS))
+    """
+    Stable identity of an imported record; equal fingerprints within a source are duplicates.
+
+    Snapshot records (no change time in the source) are identified without their timestamp,
+    which is only the import time, so re-importing the same snapshot matches what it created.
+    """
+    snapshot = bool(record.get("snapshot"))
+    values = (
+        f"v{FINGERPRINT_VERSION}",
+        source,
+        *("" if snapshot and f == "timestamp" else _fingerprint_value(record.get(f)) for f in FINGERPRINT_FIELDS),
+    )
     return hashlib.sha256("\x1f".join(values).encode("utf-8")).hexdigest()

@@ -119,3 +119,51 @@ class FingerprintScopeTests(TestCase):
             f"{base},,,,web1.example.com\n"
         )
         self.assertEqual((result.created, result.duplicates), (5, 0))
+
+
+class SnapshotIdempotencyTests(TestCase):
+    """Re-importing the same snapshot file must not create new events."""
+
+    def setUp(self):
+        self.source = make_source(source_timezone="UTC")
+
+    def run_bytes(self, source, data, **kwargs):
+        return run_import(source, build_importer(source, data), data=data, **kwargs)
+
+    def test_reimporting_undated_rows_creates_nothing(self):
+        data = (
+            b"ip,timestamp,event_type,hostname\n"
+            b"203.0.113.10,2025-01-01 10:00,create,web1\n"
+            b"203.0.113.11,,create,web2\n"
+        )
+        first, _ = self.run_bytes(self.source, data)
+        second, _ = self.run_bytes(self.source, data)
+        self.assertEqual(first.created, 2)
+        self.assertEqual((second.created, second.duplicates), (0, 2))
+
+    def test_reimporting_infoblox_export_creates_nothing(self):
+        source = make_source("nios", "infoblox")
+        data = (FIXTURES / "infoblox_nios.csv").read_bytes()
+        self.assertEqual(self.run_bytes(source, data)[0].created, 5)
+        shifted = b"\n" + data  # same records on different line numbers
+        self.assertEqual(self.run_bytes(source, shifted)[0].created, 0)
+
+    def test_infoblox_record_ids_do_not_depend_on_line_numbers(self):
+        source = make_source("nios", "infoblox")
+        self.run_bytes(source, (FIXTURES / "infoblox_nios.csv").read_bytes())
+        ids = set(HistoricalIPEvent.objects.filter(source=source).values_list("source_record_id", flat=True))
+        self.assertIn("hostrecord:192.0.2.40:device-01.example.com", ids)
+        self.assertIn("fixedaddress:192.0.2.42:device-02.example.com", ids)
+
+    def test_reimporting_the_same_file_warns(self):
+        data = b"ip,timestamp,event_type\n203.0.113.12,2025-01-01 10:00,create\n"
+        _, first_job = self.run_bytes(self.source, data)
+        self.assertEqual(first_job.summary.get("warnings", []), [])
+        result, job = self.run_bytes(self.source, data)
+        self.assertEqual(len(result.warnings), 1)
+        self.assertIn(f"#{first_job.pk}", result.warnings[0])
+        self.assertEqual(job.summary["warnings"], result.warnings)
+        dry, _ = self.run_bytes(self.source, data, dry_run=True)
+        self.assertEqual(len(dry.warnings), 1)
+        other = make_source("other-source", source_timezone="UTC")
+        self.assertEqual(self.run_bytes(other, data)[0].warnings, [])

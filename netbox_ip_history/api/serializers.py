@@ -48,7 +48,7 @@ class HistoricalIPEventSerializer(NetBoxModelSerializer):
     class Meta:
         model = HistoricalIPEvent
         fields = (
-            "id", "url", "display_url", "display", "timestamp", "ip_address", "prefix_length", "vrf_name",
+            "id", "url", "display_url", "display", "timestamp", "snapshot", "ip_address", "prefix_length", "vrf_name",
             "vrf_rd", "source_scope_identifier", "tenant_name", "event_type", "source", "import_job",
             "source_record_id", "source_event_type", "source_username", "hostname", "dns_name", "description",
             "owner_type", "owner_name", "interface_name", "mac_address", "device_name", "virtual_machine_name",

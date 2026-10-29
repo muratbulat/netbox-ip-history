@@ -15,6 +15,9 @@
       <h2 class="card-header">{% trans "Dry run result" %} — {{ source }} / <span class="font-monospace">{{ filename }}</span></h2>
       <div class="card-body">
         <div class="alert alert-info mb-3">{% trans "Nothing was saved. Uncheck “Dry run” to import." %}</div>
+        {% for warning in result.warnings %}
+          <div class="alert alert-warning mb-3">{{ warning }}</div>
+        {% endfor %}
         <div class="row text-center mb-3">
           <div class="col"><div class="text-secondary">{% trans "Records" %}</div><div class="h3">{{ result.total }}</div></div>
           <div class="col"><div class="text-secondary">{% trans "Would be created" %}</div><div class="h3 text-success">{{ result.created }}</div></div>

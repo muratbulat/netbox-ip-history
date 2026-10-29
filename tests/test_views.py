@@ -198,3 +198,19 @@ class PageRenderTests(TestCase):
         for page in pages:
             with self.subTest(page=page):
                 self.assertEqual(self.client.get(page).status_code, 200)
+
+
+class DuplicateUploadWarningTests(TestCase):
+    user_permissions = [
+        "netbox_ip_history.view_importsource",
+        "netbox_ip_history.add_historicalipevent",
+        "netbox_ip_history.add_importjob",
+        "netbox_ip_history.view_importjob",
+    ]
+
+    def test_second_upload_of_same_file_shows_warning(self):
+        source = make_source(source_timezone="UTC")
+        payload = {"source": source.pk, "format": "csv", "delimiter": ","}
+        self.client.post(url("import"), {**payload, "file": SimpleUploadedFile("h.csv", CSV)})
+        response = self.client.post(url("import"), {**payload, "file": SimpleUploadedFile("h.csv", CSV)}, follow=True)
+        self.assertContains(response, "already imported")

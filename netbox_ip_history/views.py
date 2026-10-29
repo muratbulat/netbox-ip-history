@@ -73,6 +73,7 @@ class ImportJobResultPanel(panels.ObjectAttributesPanel):
 
 class HistoricalIPEventPanel(panels.ObjectAttributesPanel):
     timestamp = attrs.DateTimeAttr("timestamp")
+    snapshot = attrs.BooleanAttr("snapshot", display_false=False)
     ip_address = attrs.TextAttr("ip_address", label=_("IP address"), style="font-monospace", copy_button=True)
     prefix_length = attrs.NumericAttr("prefix_length")
     scope = attrs.TextAttr("scope", label=_("VRF"))
@@ -396,6 +397,8 @@ class ImportView(PermissionRequiredView):
             form.add_error(None, _("Import failed: {error}").format(error=exc))
             return render(request, self.template_name, {"form": form})
 
+        for warning in result.warnings:
+            messages.warning(request, warning)
         if job is not None:
             messages.success(
                 request,

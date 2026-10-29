@@ -102,6 +102,11 @@ class HistoricalIPEvent(NetBoxModel):
     """A single point-in-time fact about an IP address, native or imported."""
 
     timestamp = models.DateTimeField(verbose_name=_("timestamp"))
+    snapshot = models.BooleanField(
+        verbose_name=_("snapshot"),
+        default=False,
+        help_text=_("The source gave no change time; the timestamp is when the record was imported."),
+    )
     ip_address = models.GenericIPAddressField(verbose_name=_("IP address"))
     prefix_length = models.PositiveSmallIntegerField(null=True, blank=True)
     vrf_name = models.CharField(verbose_name=_("VRF"), max_length=255, blank=True)

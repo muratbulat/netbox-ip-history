@@ -60,3 +60,16 @@ def recompute(apps, algorithm, batch_size=2000):
         HistoricalIPEvent.objects.filter(pk__in=duplicates[start:start + batch_size]).delete()
     HistoricalIPEvent.objects.bulk_update(changed, ["fingerprint"], batch_size=batch_size)
     return len(changed), len(duplicates)
+
+
+def fingerprint_v3(source_slug, event):
+    fields = (
+        "source_record_id", "ip_address", "timestamp", "event_type", "hostname", "dns_name", "owner_name",
+        "interface_name", "mac_address", "vrf_name", "vrf_rd", "status", "description",
+    )
+    values = (
+        "v3",
+        source_slug,
+        *("" if event.snapshot and f == "timestamp" else _value(getattr(event, f)) for f in fields),
+    )
+    return hashlib.sha256("\x1f".join(values).encode("utf-8")).hexdigest()
