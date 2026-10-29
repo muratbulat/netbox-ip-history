@@ -28,25 +28,26 @@ def forwards(apps, schema_editor):
         .exclude(fingerprint__startswith=NATIVE_PREFIX)
         .select_related("source")
     )
-    snapshots, infoblox = [], []
+    undated, infoblox = [], []
     for event in imported.iterator(chunk_size=2000):
         if event.source.source_type == "infoblox":
             kind = (event.raw_data or {}).get("object") or event.source_event_type
             event.source_record_id = f"{kind}:{event.ip_address}:{event.hostname}"
             infoblox.append(event)
-            snapshots.append(event.pk)
+            undated.append(event.pk)
         elif not _had_timestamp(event):
-            snapshots.append(event.pk)
+            undated.append(event.pk)
     HistoricalIPEvent.objects.bulk_update(infoblox, ["source_record_id"], batch_size=2000)
-    for start in range(0, len(snapshots), 2000):
-        HistoricalIPEvent.objects.filter(pk__in=snapshots[start:start + 2000]).update(snapshot=True)
+    for start in range(0, len(undated), 2000):
+        HistoricalIPEvent.objects.filter(pk__in=undated[start:start + 2000]).update(undated=True)
     recompute(apps, fingerprint_v3)
 
 
 class Migration(migrations.Migration):
     """
-    Undated rows (snapshots) are identified without their import-time timestamp, and Infoblox
-    record IDs no longer include CSV line numbers, so re-importing a snapshot is idempotent.
+    Undated rows (no change time in the source) are identified without their import-time
+    timestamp, and Infoblox record IDs no longer include CSV line numbers, so re-importing a
+    snapshot export is idempotent.
     """
 
     dependencies = [("netbox_ip_history", "0009_fingerprint_v2")]
@@ -54,7 +55,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="historicalipevent",
-            name="snapshot",
+            name="undated",
             field=models.BooleanField(default=False),
         ),
         migrations.RunPython(forwards, migrations.RunPython.noop),

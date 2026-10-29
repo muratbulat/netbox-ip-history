@@ -265,3 +265,17 @@ class BackgroundUploadTests(TestCase):
         enqueue.assert_called_once()
         self.assertEqual(job.file_hash, hashlib.sha256(CSV).hexdigest())
         self.assertEqual(job.file_size, len(CSV))
+
+
+class EventDeletionTests(TestCase):
+    user_permissions = ["netbox_ip_history.view_historicalipevent", "netbox_ip_history.delete_historicalipevent"]
+
+    def test_imported_event_can_be_deleted_in_the_ui(self):
+        from netbox_ip_history.services.import_service import build_importer, run_import
+
+        source = make_source(source_timezone="UTC")
+        run_import(source, build_importer(source, CSV))
+        event = HistoricalIPEvent.objects.get()
+        response = self.client.post(url("historicalipevent_delete", event.pk), {"confirm": True})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(HistoricalIPEvent.objects.filter(pk=event.pk).exists())

@@ -18,7 +18,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 def live_fingerprint(event):
     return fingerprint(
-        event.source.slug, {**{f: getattr(event, f) for f in FINGERPRINT_FIELDS}, "snapshot": event.snapshot}
+        event.source.slug, {**{f: getattr(event, f) for f in FINGERPRINT_FIELDS}, "undated": event.undated}
     )
 
 
@@ -39,7 +39,7 @@ class FingerprintMigrationTests(TestCase):
         )
 
     def test_latest_frozen_algorithm_matches_live(self):
-        event = self.legacy_event("x", vrf_name="VRF-B", mac_address="00:00:5e:00:53:07", snapshot=True)
+        event = self.legacy_event("x", vrf_name="VRF-B", mac_address="00:00:5e:00:53:07", undated=True)
         self.assertEqual(fingerprints.fingerprint_v3(self.source.slug, event), live_fingerprint(event))
 
     def test_v2_recompute_dedupes_and_skips_native(self):
@@ -60,20 +60,20 @@ class FingerprintMigrationTests(TestCase):
         native_after = HistoricalIPEvent.objects.get(pk=native.pk)
         self.assertEqual(native_after.fingerprint, native.fingerprint)
 
-    def test_0010_flags_snapshots_and_makes_reimport_idempotent(self):
+    def test_0010_flags_undated_rows_and_makes_reimport_idempotent(self):
         data = (
             b"ip,timestamp,event_type,hostname\n"
             b"203.0.113.8,2025-01-01 10:00,create,web1\n"
             b"203.0.113.9,,create,web2\n"
         )
         _, job = run_import(self.source, build_importer(self.source, data))
-        # State left by 1.0.0: no snapshot flag and fingerprints from an older algorithm.
+        # State left by 1.0.0: no undated flag and fingerprints from an older algorithm.
         for event in HistoricalIPEvent.objects.filter(import_job=job):
-            HistoricalIPEvent.objects.filter(pk=event.pk).update(snapshot=False, fingerprint=f"pre-upgrade-{event.pk}")
+            HistoricalIPEvent.objects.filter(pk=event.pk).update(undated=False, fingerprint=f"pre-upgrade-{event.pk}")
 
         migration_0010.forwards(apps, None)
 
-        flags = dict(HistoricalIPEvent.objects.filter(import_job=job).values_list("ip_address", "snapshot"))
+        flags = dict(HistoricalIPEvent.objects.filter(import_job=job).values_list("ip_address", "undated"))
         self.assertEqual(flags, {"203.0.113.8": False, "203.0.113.9": True})
         result, _ = run_import(self.source, build_importer(self.source, data))
         self.assertEqual((result.created, result.duplicates), (0, 2))
@@ -84,12 +84,12 @@ class FingerprintMigrationTests(TestCase):
         _, job = run_import(source, build_importer(source, data))
         for i, event in enumerate(HistoricalIPEvent.objects.filter(import_job=job)):
             HistoricalIPEvent.objects.filter(pk=event.pk).update(
-                source_record_id=f"{event.source_event_type}:{i + 2}:0", snapshot=False, fingerprint=f"old-{i}"
+                source_record_id=f"{event.source_event_type}:{i + 2}:0", undated=False, fingerprint=f"old-{i}"
             )
 
         migration_0010.forwards(apps, None)
 
         ids = set(HistoricalIPEvent.objects.filter(import_job=job).values_list("source_record_id", flat=True))
         self.assertIn("hostrecord:192.0.2.40:device-01.example.com", ids)
-        self.assertTrue(all(HistoricalIPEvent.objects.filter(import_job=job).values_list("snapshot", flat=True)))
+        self.assertTrue(all(HistoricalIPEvent.objects.filter(import_job=job).values_list("undated", flat=True)))
         self.assertEqual(run_import(source, build_importer(source, b"\n" + data))[0].created, 0)

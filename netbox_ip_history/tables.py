@@ -55,7 +55,7 @@ class ImportJobTable(NetBoxTable):
 
 class HistoricalIPEventTable(NetBoxTable):
     timestamp = columns.DateTimeColumn(verbose_name=_("Timestamp"), linkify=True)
-    snapshot = columns.BooleanColumn(verbose_name=_("Snapshot"), false_mark=None)
+    undated = columns.BooleanColumn(verbose_name=_("Undated"), false_mark=None)
     ip_address = tables.Column(verbose_name=_("IP Address"), linkify=True)
     event_type = columns.ChoiceFieldColumn(verbose_name=_("Event"))
     source = tables.Column(verbose_name=_("Source"), linkify=True)
@@ -67,7 +67,7 @@ class HistoricalIPEventTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = HistoricalIPEvent
         fields = (
-            "pk", "id", "timestamp", "snapshot", "ip_address", "prefix_length", "vrf_name", "vrf_rd", "event_type",
+            "pk", "id", "timestamp", "undated", "ip_address", "prefix_length", "vrf_name", "vrf_rd", "event_type",
             "source", "import_job", "source_username", "hostname", "dns_name", "owner_type", "owner_name",
             "device_name", "virtual_machine_name", "interface_name", "mac_address", "status", "tenant_name", "site",
             "description", "related_netbox_ip", "tags", "created", "actions",

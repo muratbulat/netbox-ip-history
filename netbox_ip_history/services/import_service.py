@@ -70,7 +70,7 @@ def normalize_record(source: ImportSource, record: dict[str, Any], default_times
         ip_address=ip,
         prefix_length=int(raw_prefix) if raw_prefix.isdigit() and int(raw_prefix) <= 128 else prefix,
         timestamp=normalize_timestamp(record.get("timestamp"), source.source_timezone, default_timestamp),
-        snapshot=not str(record.get("timestamp") or "").strip(),
+        undated=not str(record.get("timestamp") or "").strip(),
         event_type=normalize_event_type(record.get("event_type") or record.get("source_event_type")),
         vrf_name=normalize_vrf(record.get("vrf_name")),
         raw_data=record.get("raw_data") or {k: v for k, v in record.items() if k != "raw_data"},

@@ -148,8 +148,9 @@ class HistoricalIPEvent(NetBoxModel):
     """A single point-in-time fact about an IP address, native or imported."""
 
     timestamp = models.DateTimeField(verbose_name=_("timestamp"))
-    snapshot = models.BooleanField(
-        verbose_name=_("snapshot"),
+    # Not "snapshot": NetBox's change logging calls instance.snapshot() before deletes.
+    undated = models.BooleanField(
+        verbose_name=_("undated"),
         default=False,
         help_text=_("The source gave no change time; the timestamp is when the record was imported."),
     )

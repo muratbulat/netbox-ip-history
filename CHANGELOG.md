@@ -15,9 +15,9 @@ All notable changes to this project are documented here.
   `0009` recomputes the fingerprints of already-imported events (versioned algorithm v2), so
   re-importing an old file still matches what it imported; native events are untouched.
 - Re-importing a file with undated rows (e.g. any Infoblox export) no longer creates new
-  events each time. Such rows are flagged as *snapshot* events and identified without their
+  events each time. Such rows are flagged as *undated* events and identified without their
   import-time timestamp, and Infoblox record IDs no longer contain CSV line numbers.
-  Migration `0010` flags existing snapshot events and recomputes their fingerprints (v3).
+  Migration `0010` flags existing undated events and recomputes their fingerprints (v3).
 - Importing a file that was already imported into the same source (same SHA-256) now warns,
   in the UI and in the job summary.
 - The *IP History* tab of an IP address only shows events of that address in its own VRF

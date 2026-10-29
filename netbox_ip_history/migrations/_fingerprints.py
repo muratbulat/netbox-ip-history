@@ -70,6 +70,6 @@ def fingerprint_v3(source_slug, event):
     values = (
         "v3",
         source_slug,
-        *("" if event.snapshot and f == "timestamp" else _value(getattr(event, f)) for f in fields),
+        *("" if event.undated and f == "timestamp" else _value(getattr(event, f)) for f in fields),
     )
     return hashlib.sha256("\x1f".join(values).encode("utf-8")).hexdigest()
