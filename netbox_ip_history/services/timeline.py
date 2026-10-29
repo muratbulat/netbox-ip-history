@@ -132,6 +132,9 @@ class ObjectLookup:
                 )
             }
             # Interfaces deleted since the change: fall back to their own last changelog entry.
+            # Intersection, not union: dcim and virtualization interface PKs overlap, so an ID
+            # found in one table may still be a deleted object of the other type. Each changelog
+            # row only fills its own model's table, and only where that table has no entry.
             missing = assigned - (self.interfaces.keys() & self.vminterfaces.keys())
             if missing:
                 last_changes = (

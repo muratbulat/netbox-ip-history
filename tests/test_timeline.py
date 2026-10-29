@@ -209,3 +209,37 @@ class TimelineTests(TestCase):
         rows = compare_sources("192.0.2.5")
         self.assertEqual([r["source"] for r in rows], ["NetBox", self.csv.name])
         self.assertEqual(rows[1]["hostname"], "device-03.example.com")
+
+
+class OverlappingInterfacePKTests(TestCase):
+    """dcim.Interface and virtualization.VMInterface PKs overlap; each must resolve via its own type."""
+
+    def setUp(self):
+        from core.models import ObjectChange
+        from django.contrib.contenttypes.models import ContentType
+        from virtualization.models import VirtualMachine, VMInterface
+
+        self.iface = make_interface(make_device("device-01"), "eth0")
+        vm = VirtualMachine.objects.create(name="vm-01")
+        vm_iface = VMInterface.objects.create(pk=self.iface.pk, virtual_machine=vm, name="ens3")
+        ObjectChange.objects.create(
+            changed_object_type=ContentType.objects.get_for_model(VMInterface),
+            changed_object_id=vm_iface.pk,
+            action="delete",
+            object_repr="vm-01 > ens3",
+            user_name="admin",
+            request_id="00000000-0000-0000-0000-000000000002",
+        )
+        vm_iface.delete()
+
+    def details(self, object_type):
+        payload = {"assigned_object_id": self.iface.pk, "assigned_object_type": object_type}
+        return change_details(payload, ObjectLookup([payload]))
+
+    def test_deleted_vminterface_resolves_from_its_changelog(self):
+        details = self.details("virtualization.vminterface")
+        self.assertEqual((details["host_name"], details["interface_name"]), ("vm-01", "ens3"))
+
+    def test_live_interface_is_not_overridden_by_other_types_changelog(self):
+        details = self.details("dcim.interface")
+        self.assertEqual((details["host_name"], details["interface_name"]), ("device-01", "eth0"))
