@@ -22,3 +22,15 @@ class BackgroundImportTests(TestCase):
         self.assertEqual(core_job.status, "completed")
         self.assertEqual(core_job.data["created"], 1)
         self.assertIn(core_job, job.jobs.all())
+
+    def test_runner_marks_job_failed_when_importer_cannot_be_built(self):
+        from netbox_ip_history.models import ImportSource
+
+        user = get_user_model().objects.create_user(username="operator2")
+        source = make_source("legacy", source_timezone="UTC")
+        ImportSource.objects.filter(pk=source.pk).update(field_mapping=[1, 2])
+        job = ImportJob.objects.create(source=source, status=ImportStatusChoices.PENDING)
+        ImportHistoryJobRunner.enqueue(instance=job, user=user, immediate=True, data=CSV, format="csv")
+        job.refresh_from_db()
+        self.assertEqual(job.status, ImportStatusChoices.FAILED)
+        self.assertTrue(job.error_details)

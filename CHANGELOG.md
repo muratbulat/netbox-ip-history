@@ -23,6 +23,11 @@ All notable changes to this project are documented here.
 - The *IP History* tab of an IP address only shows events of that address in its own VRF
   (exact match), not the same address in the global table or other VRFs; the header button
   and the tab's filter link carry the VRF to the full timeline.
+- Import sources reject unknown timezones (previously a typo silently shifted every imported
+  timestamp to the server timezone) and field mappings that aren't an object of known field
+  names to column names, in the UI and the API. A source saved with an invalid mapping by an
+  earlier version now fails its import with an error instead of a server error, and a failed
+  background import no longer leaves its import job pending.
 
 ## [1.0.0] - 2026-10-26
 

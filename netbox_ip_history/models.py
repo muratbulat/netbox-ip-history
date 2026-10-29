@@ -1,4 +1,7 @@
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -47,6 +50,38 @@ class ImportSource(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:netbox_ip_history:importsource", args=[self.pk])
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.source_timezone:
+            try:
+                ZoneInfo(self.source_timezone)
+            except (ZoneInfoNotFoundError, ValueError):
+                errors["source_timezone"] = _(
+                    "Unknown timezone {name!r}; use an IANA name such as Europe/Istanbul."
+                ).format(name=self.source_timezone)
+        if mapping_error := self._field_mapping_error():
+            errors["field_mapping"] = mapping_error
+        if errors:
+            raise ValidationError(errors)
+
+    def _field_mapping_error(self):
+        from .importers.base import DEFAULT_ALIASES  # importers import models; avoid the import cycle
+
+        mapping = self.field_mapping
+        if mapping in (None, ""):
+            return None
+        if not isinstance(mapping, dict):
+            return _("Must be a JSON object mapping field names to source column names.")
+        unknown = sorted(str(key) for key in mapping if key not in DEFAULT_ALIASES)
+        if unknown:
+            return _("Unknown field(s): {unknown}. Valid fields: {valid}.").format(
+                unknown=", ".join(unknown), valid=", ".join(sorted(DEFAULT_ALIASES))
+            )
+        if not all(isinstance(column, str) and column.strip() for column in mapping.values()):
+            return _("Every field must map to a non-empty source column name.")
+        return None
 
 
 class ImportJob(JobsMixin, NetBoxModel):

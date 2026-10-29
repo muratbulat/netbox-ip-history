@@ -393,8 +393,8 @@ class ImportView(PermissionRequiredView):
             messages.info(request, _("Import queued as a background job."))
             return redirect(job.get_absolute_url())
 
-        importer = build_importer(source, data, format=fmt, delimiter=delimiter)
         try:
+            importer = build_importer(source, data, format=fmt, delimiter=delimiter)
             result, job = run_import(
                 source, importer, dry_run=dry_run, user=request.user, filename=upload.name, data=data
             )
