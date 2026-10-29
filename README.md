@@ -36,13 +36,68 @@ of its own: it uses the Django, DRF and libraries that NetBox ships.
 
 ## Installation
 
+Installing takes three steps: install the package into NetBox's virtual environment (from
+PyPI, GitHub or an offline copy), enable it in `configuration.py`, then migrate and restart.
+The examples assume NetBox lives in `/opt/netbox`; run them as the user that owns it.
+
+### 1. Install the package
+
+#### From PyPI (recommended)
+
 ```shell
 source /opt/netbox/venv/bin/activate
 pip install netbox-ip-history
 echo netbox-ip-history >> /opt/netbox/local_requirements.txt
 ```
 
-Enable it in `configuration.py`:
+Adding the plugin to `local_requirements.txt` makes NetBox's own `upgrade.sh` reinstall it
+whenever NetBox is upgraded. Pin a version (`netbox-ip-history==1.1.0`) if you want upgrades
+to be deliberate.
+
+#### From GitHub
+
+Install a release tag (or a branch such as `dev` to test unreleased changes):
+
+```shell
+source /opt/netbox/venv/bin/activate
+pip install "git+https://github.com/muratbulat/netbox-ip-history.git@v1.1.0"
+echo "netbox-ip-history @ git+https://github.com/muratbulat/netbox-ip-history.git@v1.1.0" \
+    >> /opt/netbox/local_requirements.txt
+```
+
+Or from a clone, for example to review the code first:
+
+```shell
+git clone --branch v1.1.0 https://github.com/muratbulat/netbox-ip-history.git
+source /opt/netbox/venv/bin/activate
+pip install ./netbox-ip-history
+```
+
+#### Offline (no internet access on the NetBox host)
+
+The plugin is a single pure-Python wheel with no dependencies of its own, so one file is
+enough. On a machine with internet access:
+
+```shell
+pip download netbox-ip-history==1.1.0 --no-deps --only-binary=:all: -d netbox-ip-history-pkg
+sha256sum netbox-ip-history-pkg/*.whl   # optionally compare with the hash on pypi.org
+```
+
+Copy `netbox_ip_history-1.1.0-py3-none-any.whl` to the NetBox host (e.g. into
+`/opt/netbox/plugins/`) and install it without contacting an index:
+
+```shell
+source /opt/netbox/venv/bin/activate
+pip install --no-index --no-deps /opt/netbox/plugins/netbox_ip_history-1.1.0-py3-none-any.whl
+echo /opt/netbox/plugins/netbox_ip_history-1.1.0-py3-none-any.whl >> /opt/netbox/local_requirements.txt
+```
+
+Referencing the wheel file in `local_requirements.txt` lets `upgrade.sh` reinstall it without
+network access.
+
+### 2. Enable the plugin
+
+In `configuration.py`:
 
 ```python
 PLUGINS = ["netbox_ip_history"]
@@ -58,10 +113,15 @@ PLUGINS_CONFIG = {
 }
 ```
 
-Then apply migrations and restart NetBox and its worker (background imports run on the
+All settings are optional; the values above are the defaults.
+
+### 3. Migrate and restart
+
+Apply the migrations, then restart NetBox and its worker (background imports run on the
 NetBox RQ worker):
 
 ```shell
+source /opt/netbox/venv/bin/activate
 cd /opt/netbox/netbox
 python manage.py migrate
 sudo systemctl restart netbox netbox-rq
@@ -72,6 +132,35 @@ hasn't seen yet (for example, history from before installation) and adds them to
 search, so no `reindex` is needed. On instances with a very large change log the first run
 can take a while; set `backfill_on_migrate` to `False` and run
 `python manage.py import_ip_history --native` at a convenient time instead.
+
+### Upgrading
+
+1. Read the [changelog](CHANGELOG.md) for the versions you are skipping, and check the
+   [compatibility](#compatibility) table against your NetBox version.
+2. Back up the NetBox database. Migrations only run forward; to roll back you restore the
+   backup and reinstall the previous version.
+3. Install the new version with the method you used originally:
+
+   ```shell
+   source /opt/netbox/venv/bin/activate
+   # PyPI
+   pip install --upgrade netbox-ip-history          # or: pip install netbox-ip-history==X.Y.Z
+   # GitHub: install the new tag and update it in local_requirements.txt
+   pip install --upgrade "git+https://github.com/muratbulat/netbox-ip-history.git@vX.Y.Z"
+   # Offline: download the new wheel as above, copy it over, update local_requirements.txt
+   pip install --no-index --no-deps /opt/netbox/plugins/netbox_ip_history-X.Y.Z-py3-none-any.whl
+   ```
+
+4. Migrate and restart, as in step 3:
+
+   ```shell
+   cd /opt/netbox/netbox
+   python manage.py migrate
+   sudo systemctl restart netbox netbox-rq
+   ```
+
+Check the installed version with `pip show netbox-ip-history`. When upgrading NetBox itself,
+`upgrade.sh` reinstalls the plugin from `local_requirements.txt` and runs the migrations.
 
 ## Usage
 
