@@ -1,6 +1,6 @@
 import hashlib
 import ipaddress
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -9,6 +9,7 @@ from django.utils import timezone
 from ..choices import EventTypeChoices
 
 __all__ = (
+    "FINGERPRINT_VERSION",
     "RecordError",
     "fingerprint",
     "normalize_event_type",
@@ -147,16 +148,37 @@ def normalize_event_type(value: Any) -> str:
     return mapped if mapped in EventTypeChoices.values() else EventTypeChoices.IMPORTED
 
 
+#: Bump whenever the fingerprint inputs change, and add a data migration that recomputes the
+#: fingerprints of imported events with a frozen copy of the new algorithm.
+FINGERPRINT_VERSION = 2
+
+#: Event fields identifying an imported record, in hashing order.
+FINGERPRINT_FIELDS = (
+    "source_record_id",
+    "ip_address",
+    "timestamp",
+    "event_type",
+    "hostname",
+    "dns_name",
+    "owner_name",
+    "interface_name",
+    "mac_address",
+    "vrf_name",
+    "vrf_rd",
+    "status",
+    "description",
+)
+
+
+def _fingerprint_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.astimezone(UTC).isoformat()
+    return str(value)
+
+
 def fingerprint(source: str, record: dict[str, Any]) -> str:
-    fields = (
-        source,
-        record.get("source_record_id", ""),
-        record.get("ip_address", ""),
-        record.get("timestamp", ""),
-        record.get("event_type", ""),
-        record.get("hostname", ""),
-        record.get("owner_name", ""),
-        record.get("interface_name", ""),
-        record.get("description", ""),
-    )
-    return hashlib.sha256("\x1f".join(map(str, fields)).encode("utf-8")).hexdigest()
+    """Stable identity of an imported record; equal fingerprints within a source are duplicates."""
+    values = (f"v{FINGERPRINT_VERSION}", source, *(_fingerprint_value(record.get(f)) for f in FINGERPRINT_FIELDS))
+    return hashlib.sha256("\x1f".join(values).encode("utf-8")).hexdigest()

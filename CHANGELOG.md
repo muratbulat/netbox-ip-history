@@ -9,6 +9,12 @@ All notable changes to this project are documented here.
   from before installation) and indexes them for global search, so no manual `reindex` is
   needed. Already-recorded changes are skipped; disable with `backfill_on_migrate: False`.
 
+### Fixed
+- Import duplicate detection now also compares VRF, route distinguisher, MAC address, status
+  and DNS name, so the same row in two VRFs is no longer dropped as a duplicate. Migration
+  `0009` recomputes the fingerprints of already-imported events (versioned algorithm v2), so
+  re-importing an old file still matches what it imported; native events are untouched.
+
 ## [1.0.0] - 2026-10-26
 
 Re-engineered on NetBox's native plugin APIs. **Requires NetBox 4.7.0+ and Python 3.12+.**

@@ -89,3 +89,33 @@ class ImportServiceTests(TestCase):
         data = f"ip,hostname\n192.0.2.9,{'x' * 400}\n".encode()
         run_import(self.source, self.importer(data))
         self.assertEqual(len(HistoricalIPEvent.objects.get().hostname), 255)
+
+
+class FingerprintScopeTests(TestCase):
+    """Rows that differ only in VRF or other attributes are distinct events, not duplicates."""
+
+    def setUp(self):
+        self.source = make_source(source_timezone="UTC")
+
+    def run_csv(self, text):
+        return run_import(self.source, build_importer(self.source, text.encode(), format="csv"))[0]
+
+    def test_same_row_in_two_vrfs_is_two_events(self):
+        result = self.run_csv(
+            "ip,timestamp,event_type,hostname,vrf,mac\n"
+            "203.0.113.5,2025-01-01 10:00,create,web1,,00:00:5e:00:53:01\n"
+            "203.0.113.5,2025-01-01 10:00,create,web1,VRF-B,00:00:5e:00:53:01\n"
+        )
+        self.assertEqual((result.created, result.duplicates), (2, 0))
+
+    def test_rows_differing_only_in_attributes_are_distinct(self):
+        base = "203.0.113.6,2025-01-01 10:00,create,web1"
+        result = self.run_csv(
+            "ip,timestamp,event_type,hostname,vrf_rd,mac,status,dns_name\n"
+            f"{base},,,,\n"
+            f"{base},65000:1,,,\n"
+            f"{base},,00:00:5e:00:53:02,,\n"
+            f"{base},,,active,\n"
+            f"{base},,,,web1.example.com\n"
+        )
+        self.assertEqual((result.created, result.duplicates), (5, 0))
