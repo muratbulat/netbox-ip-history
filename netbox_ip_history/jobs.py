@@ -26,7 +26,7 @@ class ImportHistoryJobRunner(JobRunner):
             import_job.error_details = [{"row": None, "error": str(exc)}]
             import_job.save(update_fields=["status", "error_details"])
             raise
-        result, _ = run_import(import_job.source, importer, job=import_job, data=data)
+        result, _ = run_import(import_job.source, importer, job=import_job, data=data, user=import_job.user)
         for warning in result.warnings:
             self.logger.warning(warning)
         self.logger.info(

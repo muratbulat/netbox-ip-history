@@ -24,7 +24,7 @@ from .choices import ImportStatusChoices
 from .importers import support_matrix
 from .jobs import ImportHistoryJobRunner
 from .models import GLOBAL_VRF, HistoricalIPEvent, ImportJob, ImportSource
-from .services.import_service import build_importer, rollback_job, run_import
+from .services.import_service import ImportPermissionError, build_importer, rollback_job, run_import
 from .services.timeline import compare_sources, get_timeline
 
 PLUGIN = "netbox_ip_history"
@@ -226,10 +226,14 @@ class ImportJobRollbackView(PermissionRequiredView):
         if job.status == ImportStatusChoices.ROLLED_BACK:
             messages.warning(request, _("Import job {job} was already rolled back.").format(job=job))
         else:
-            deleted = rollback_job(job)
-            messages.success(
-                request, _("Rolled back import job {job}: {count} events deleted.").format(job=job, count=deleted)
-            )
+            try:
+                deleted = rollback_job(job, user=request.user)
+            except ImportPermissionError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request, _("Rolled back import job {job}: {count} events deleted.").format(job=job, count=deleted)
+                )
         return redirect(job.get_absolute_url())
 
 

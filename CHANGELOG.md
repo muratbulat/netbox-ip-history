@@ -34,6 +34,12 @@ All notable changes to this project are documented here.
   export* (they were hidden from the import form and treated as native history). The `netbox`
   source type and slug are now reserved for NetBox's own history, and the native source is
   looked up by both.
+- Deleting an event in the UI (or rolling back an import) no longer fails with
+  `TypeError: 'bool' object is not callable` (unreleased regression from the new flag above).
+- Object-level permissions are enforced for imports and rollbacks: an import is rolled back
+  if any created event falls outside the user's *add* constraints (also for background
+  imports), and a rollback is refused if any event of the job falls outside the user's
+  *delete* constraints. Previously both acted on every event regardless of constraints.
 
 ## [1.0.0] - 2026-10-26
 

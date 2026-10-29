@@ -122,6 +122,12 @@ Nothing is visible without a permission. Viewing history requires
 Object-level permission constraints apply to the timeline, comparison and API. History
 reconstructed live from NetBox's change log additionally requires `core.view_objectchange`.
 
+Imports and rollbacks are all-or-nothing under object-level constraints: an import fails if
+any record falls outside the user's `add_historicalipevent` constraints, and a rollback is
+refused if any event of the job falls outside their `delete_historicalipevent` constraints.
+Dry runs write nothing and therefore do not evaluate add constraints; the real import does.
+Imports run from `manage.py import_ip_history` are not subject to object permissions.
+
 ## Security
 
 - Report vulnerabilities privately through
