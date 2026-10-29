@@ -20,6 +20,9 @@ All notable changes to this project are documented here.
   Migration `0010` flags existing snapshot events and recomputes their fingerprints (v3).
 - Importing a file that was already imported into the same source (same SHA-256) now warns,
   in the UI and in the job summary.
+- The *IP History* tab of an IP address only shows events of that address in its own VRF
+  (exact match), not the same address in the global table or other VRFs; the header button
+  and the tab's filter link carry the VRF to the full timeline.
 
 ## [1.0.0] - 2026-10-26
 

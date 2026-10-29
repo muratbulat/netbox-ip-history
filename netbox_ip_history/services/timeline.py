@@ -457,12 +457,12 @@ def describe_change(change, lookup: ObjectLookup | None = None) -> dict[str, Any
 
 def _matches(entry: dict, vrf: str, event_type: str, owner: str, vrf_exact: bool = False) -> bool:
     if vrf:
-        if vrf.lower() == GLOBAL_VRF.lower():
-            if entry["vrf"] != GLOBAL_VRF:
-                return False
-        elif vrf_exact and vrf.lower() != entry["vrf"].lower():
-            return False
-        elif vrf.lower() not in entry["vrf"].lower():
+        wanted, actual = vrf.lower(), entry["vrf"].lower()
+        if wanted == GLOBAL_VRF.lower():
+            matched = actual == GLOBAL_VRF.lower()
+        else:
+            matched = wanted == actual if vrf_exact else wanted in actual
+        if not matched:
             return False
     if event_type and entry["event_type"] != event_type:
         return False
