@@ -2,7 +2,12 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [1.1.0] - 2026-10-30
+
+### Upgrading
+- Run `manage.py migrate`: migrations `0009`–`0012` recompute import fingerprints, flag undated
+  events, map legacy source types and add the date-order setting. Existing imports keep
+  matching their files after the upgrade, so re-importing them does not duplicate events.
 
 ### Added
 - `migrate` records ipaddress `ObjectChange` rows that aren't yet history events (e.g. history

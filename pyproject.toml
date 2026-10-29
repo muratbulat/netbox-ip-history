@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-ip-history"
-version = "1.0.0"
+version = "1.1.0"
 description = "NetBox plugin unifying native and imported IP address lifecycle history."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.12"
