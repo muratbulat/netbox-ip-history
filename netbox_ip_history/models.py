@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from netbox.models import NetBoxModel
 from netbox.models.features import JobsMixin
 
-from .choices import EventTypeChoices, ImportModeChoices, ImportStatusChoices, SourceTypeChoices
+from .choices import DateOrderChoices, EventTypeChoices, ImportModeChoices, ImportStatusChoices, SourceTypeChoices
 
 __all__ = ("HistoricalIPEvent", "ImportJob", "ImportSource")
 
@@ -33,6 +33,13 @@ class ImportSource(NetBoxModel):
         blank=True,
         help_text=_("IANA timezone applied to naive timestamps in imported files (e.g. Europe/Istanbul)."),
     )
+    date_order = models.CharField(
+        verbose_name=_("date order"),
+        max_length=3,
+        choices=DateOrderChoices,
+        default=DateOrderChoices.DAY_FIRST,
+        help_text=_("How ambiguous slash-separated dates such as 03/04/2025 are read."),
+    )
     field_mapping = models.JSONField(
         verbose_name=_("field mapping"),
         default=dict,
@@ -41,7 +48,7 @@ class ImportSource(NetBoxModel):
     )
     source_priority = models.PositiveIntegerField(verbose_name=_("priority"), default=100)
 
-    clone_fields = ("source_type", "enabled", "source_timezone", "field_mapping", "source_priority")
+    clone_fields = ("source_type", "enabled", "source_timezone", "date_order", "field_mapping", "source_priority")
 
     class Meta:
         ordering = ("name",)

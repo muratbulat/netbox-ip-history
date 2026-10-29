@@ -1,10 +1,11 @@
+from datetime import UTC
 from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
 
 from netbox_ip_history.choices import ImportStatusChoices
-from netbox_ip_history.models import HistoricalIPEvent, ImportJob
+from netbox_ip_history.models import HistoricalIPEvent, ImportJob, ImportSource
 from netbox_ip_history.services import import_service
 from netbox_ip_history.services.import_service import build_importer, rollback_job, run_import
 
@@ -195,3 +196,22 @@ class PrefixLengthTests(TestCase):
 
     def test_zero_length_prefix_is_kept(self):
         self.assertEqual(self.prefix("192.0.2.1/24", "0"), 0)
+
+
+class DateOrderTests(TestCase):
+    def parse(self, value, **source_fields):
+        from netbox_ip_history.services.import_service import normalize_record
+
+        source = make_source(f"src-{ImportSource.objects.count()}", source_timezone="UTC", **source_fields)
+        return normalize_record(source, {"ip_address": "192.0.2.1", "timestamp": value})["timestamp"]
+
+    def test_day_first_is_the_default(self):
+        self.assertEqual((self.parse("03/04/2025").month, self.parse("03/04/2025").day), (4, 3))
+
+    def test_month_first_sources(self):
+        parsed = self.parse("03/04/2025 10:00", date_order="mdy").astimezone(UTC)
+        self.assertEqual((parsed.month, parsed.day, parsed.hour), (3, 4, 10))
+        unambiguous = self.parse("13/04/2025", date_order="mdy")  # no 13th month: still day-first
+        self.assertEqual((unambiguous.month, unambiguous.day), (4, 13))
+        dotted = self.parse("03.04.2025", date_order="mdy")  # dotted dates are always day-first
+        self.assertEqual((dotted.month, dotted.day), (4, 3))

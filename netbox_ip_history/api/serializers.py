@@ -19,7 +19,7 @@ class ImportSourceSerializer(NetBoxModelSerializer):
         model = ImportSource
         fields = (
             "id", "url", "display_url", "display", "name", "slug", "source_type", "enabled", "description",
-            "source_timezone", "field_mapping", "source_priority", "tags", "custom_fields", "created",
+            "source_timezone", "date_order", "field_mapping", "source_priority", "tags", "custom_fields", "created",
             "last_updated",
         )
         brief_fields = ("id", "url", "display", "name", "slug", "source_type")

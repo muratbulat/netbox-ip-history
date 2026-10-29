@@ -82,7 +82,9 @@ def normalize_record(source: ImportSource, record: dict[str, Any], default_times
     normalized.update(
         ip_address=ip,
         prefix_length=prefix if prefix_length is None else prefix_length,
-        timestamp=normalize_timestamp(record.get("timestamp"), source.source_timezone, default_timestamp),
+        timestamp=normalize_timestamp(
+            record.get("timestamp"), source.source_timezone, default_timestamp, getattr(source, "date_order", "dmy")
+        ),
         undated=not str(record.get("timestamp") or "").strip(),
         event_type=normalize_event_type(record.get("event_type") or record.get("source_event_type")),
         vrf_name=normalize_vrf(record.get("vrf_name")),

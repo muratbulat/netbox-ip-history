@@ -44,6 +44,9 @@ All notable changes to this project are documented here.
   refers to.
 - Imported prefix lengths are validated per address family (a `64` on an IPv4 address is no
   longer stored) and IPv4 dotted netmasks such as `255.255.255.0` are accepted.
+- New per-source *date order* setting (`date_order`: `dmy`, the default and previous
+  behaviour, or `mdy`) for slash-separated dates, so US-style exports (`03/04/2025` = March 4)
+  are no longer silently read day-first. Migration `0012` adds it.
 
 ### Security
 - Timeline CSV exports prefix values starting with `=`, `+`, `-`, `@`, tab or carriage return

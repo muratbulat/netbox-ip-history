@@ -76,8 +76,9 @@ can take a while; set `backfill_on_migrate` to `False` and run
 ## Usage
 
 1. **IP History → Sources**: add an import source, choose its type, and set its timezone
-   (applied to timestamps without an offset) and an optional field mapping such as
-   `{"hostname": "Server Name"}`.
+   (applied to timestamps without an offset), its date order (*day first* by default, so
+   `03/04/2025` is 3 April; choose *month first* for US-style exports) and an optional field
+   mapping such as `{"hostname": "Server Name"}`.
 2. **IP History → Import History**: upload an export. Leave *Dry run* checked to preview
    what would be imported; uncheck it to import. Every import is an *Import Job* that can be
    rolled back.

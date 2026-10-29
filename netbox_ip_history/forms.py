@@ -7,7 +7,7 @@ from utilities.forms.fields import DynamicModelMultipleChoiceField, SlugField, T
 from utilities.forms.rendering import FieldSet
 from utilities.forms.widgets import BulkEditNullBooleanSelect, DateTimePicker
 
-from .choices import EventTypeChoices, ImportStatusChoices, SourceTypeChoices
+from .choices import DateOrderChoices, EventTypeChoices, ImportStatusChoices, SourceTypeChoices
 from .importers import importer_for
 from .models import HistoricalIPEvent, ImportJob, ImportSource
 from .services.normalize import RecordError, normalize_ip
@@ -34,13 +34,13 @@ class ImportSourceForm(NetBoxModelForm):
 
     fieldsets = (
         FieldSet("name", "slug", "source_type", "enabled", "description", "tags", name=_("Source")),
-        FieldSet("source_timezone", "source_priority", "field_mapping", name=_("Parsing")),
+        FieldSet("source_timezone", "date_order", "source_priority", "field_mapping", name=_("Parsing")),
     )
 
     class Meta:
         model = ImportSource
         fields = (
-            "name", "slug", "source_type", "enabled", "description", "source_timezone", "source_priority",
+            "name", "slug", "source_type", "enabled", "description", "source_timezone", "date_order", "source_priority",
             "field_mapping", "tags",
         )
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
@@ -53,10 +53,11 @@ class ImportSourceBulkEditForm(NetBoxModelBulkEditForm):
     )
     enabled = forms.NullBooleanField(required=False, widget=BulkEditNullBooleanSelect, label=_("Enabled"))
     source_timezone = forms.CharField(max_length=64, required=False, label=_("Source timezone"))
+    date_order = forms.ChoiceField(choices=add_blank_choice(DateOrderChoices), required=False, label=_("Date order"))
     source_priority = forms.IntegerField(min_value=0, required=False, label=_("Priority"))
     description = forms.CharField(required=False, label=_("Description"))
 
-    fieldsets = (FieldSet("source_type", "enabled", "source_timezone", "source_priority", "description"),)
+    fieldsets = (FieldSet("source_type", "enabled", "source_timezone", "date_order", "source_priority", "description"),)
     nullable_fields = ("source_timezone", "description")
 
 

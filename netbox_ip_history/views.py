@@ -49,6 +49,7 @@ class ImportSourcePanel(panels.ObjectAttributesPanel):
     source_type = attrs.ChoiceAttr("source_type", label=_("Type"))
     enabled = attrs.BooleanAttr("enabled")
     source_timezone = attrs.TextAttr("source_timezone", label=_("Timezone"))
+    date_order = attrs.ChoiceAttr("date_order", label=_("Date order"))
     source_priority = attrs.NumericAttr("source_priority", label=_("Priority"))
     description = attrs.TextAttr("description")
 

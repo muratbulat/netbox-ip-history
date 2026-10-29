@@ -86,6 +86,16 @@ class SourceTypeChoices(ChoiceSet):
     ]
 
 
+class DateOrderChoices(ChoiceSet):
+    DAY_FIRST = "dmy"
+    MONTH_FIRST = "mdy"
+
+    CHOICES = [
+        (DAY_FIRST, _("Day first (31/12/2025)")),
+        (MONTH_FIRST, _("Month first (12/31/2025)")),
+    ]
+
+
 class ImportModeChoices(ChoiceSet):
     HISTORY_ONLY = "history_only"
     INVENTORY_HISTORY = "inventory_history"

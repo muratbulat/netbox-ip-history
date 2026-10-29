@@ -19,22 +19,24 @@ __all__ = (
     "normalize_vrf",
 )
 
-_TIMESTAMP_FORMATS = (
+_DAY_FIRST = ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y")
+_MONTH_FIRST = ("%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y")
+_UNAMBIGUOUS = (
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%d %H:%M",
     "%Y-%m-%d",
-    "%d/%m/%Y %H:%M:%S",
-    "%d/%m/%Y %H:%M",
-    "%d/%m/%Y",
-    "%m/%d/%Y %H:%M:%S",
-    "%m/%d/%Y %H:%M",
-    "%m/%d/%Y",
     "%d.%m.%Y %H:%M:%S",
     "%d.%m.%Y %H:%M",
     "%d.%m.%Y",
     "%Y/%m/%d %H:%M:%S",
     "%Y/%m/%d",
 )
+#: Formats tried in order. Slash dates follow the source's preferred order first; the other order
+#: only applies when the preferred one cannot parse the value (e.g. 13/04/2025 is day-first).
+_TIMESTAMP_FORMATS = {
+    "dmy": (*_UNAMBIGUOUS[:3], *_DAY_FIRST, *_MONTH_FIRST, *_UNAMBIGUOUS[3:]),
+    "mdy": (*_UNAMBIGUOUS[:3], *_MONTH_FIRST, *_DAY_FIRST, *_UNAMBIGUOUS[3:]),
+}
 
 _EVENT_ALIASES = {
     "add": "created",
@@ -127,7 +129,9 @@ def _zone(name: str):
     return timezone.get_current_timezone()
 
 
-def normalize_timestamp(value: Any, source_timezone: str = "", default: datetime | None = None) -> datetime:
+def normalize_timestamp(
+    value: Any, source_timezone: str = "", default: datetime | None = None, date_order: str = "dmy"
+) -> datetime:
     """
     Parse ISO-8601, common day/month orderings or epoch seconds into an aware datetime.
 
@@ -144,7 +148,7 @@ def normalize_timestamp(value: Any, source_timezone: str = "", default: datetime
         try:
             result = datetime.fromisoformat(text.replace("Z", "+00:00"))
         except ValueError:
-            for fmt in _TIMESTAMP_FORMATS:
+            for fmt in _TIMESTAMP_FORMATS.get(date_order, _TIMESTAMP_FORMATS["dmy"]):
                 try:
                     result = datetime.strptime(text, fmt)
                     break
