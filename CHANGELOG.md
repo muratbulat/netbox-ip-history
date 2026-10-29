@@ -28,6 +28,7 @@ All notable changes to this project are documented here.
   names to column names, in the UI and the API. A source saved with an invalid mapping by an
   earlier version now fails its import with an error instead of a server error, and a failed
   background import no longer leaves its import job pending.
+- Background imports record the uploaded file's SHA-256 on the import job (it was left empty).
 
 ## [1.0.0] - 2026-10-26
 

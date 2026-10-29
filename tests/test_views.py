@@ -239,3 +239,29 @@ class IPAddressTabScopeTests(TestCase):
 
         detail = self.client.get(ip.get_absolute_url())
         self.assertContains(detail, "?ip=198.51.100.77&amp;vrf=VRF-A")
+
+
+class BackgroundUploadTests(TestCase):
+    user_permissions = [
+        "netbox_ip_history.view_importsource",
+        "netbox_ip_history.add_historicalipevent",
+        "netbox_ip_history.add_importjob",
+    ]
+
+    def test_queued_job_records_file_hash(self):
+        import hashlib
+        from unittest import mock
+
+        from netbox_ip_history.jobs import ImportHistoryJobRunner
+
+        source = make_source(source_timezone="UTC")
+        with mock.patch.object(ImportHistoryJobRunner, "enqueue") as enqueue:
+            self.client.post(
+                url("import"),
+                {"source": source.pk, "format": "csv", "delimiter": ",", "background": "on",
+                 "file": SimpleUploadedFile("h.csv", CSV)},
+            )
+        job = ImportJob.objects.get()
+        enqueue.assert_called_once()
+        self.assertEqual(job.file_hash, hashlib.sha256(CSV).hexdigest())
+        self.assertEqual(job.file_size, len(CSV))

@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import io
 import json
 
@@ -385,7 +386,7 @@ class ImportView(PermissionRequiredView):
         if not dry_run and (form.cleaned_data["background"] or len(data) >= threshold):
             job = ImportJob.objects.create(
                 source=source, user=request.user, filename=upload.name[:255], file_size=len(data),
-                status=ImportStatusChoices.PENDING,
+                file_hash=hashlib.sha256(data).hexdigest(), status=ImportStatusChoices.PENDING,
             )
             ImportHistoryJobRunner.enqueue(
                 instance=job, user=request.user, data=data, format=fmt, delimiter=delimiter
