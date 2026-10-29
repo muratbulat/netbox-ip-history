@@ -279,3 +279,34 @@ class EventDeletionTests(TestCase):
         response = self.client.post(url("historicalipevent_delete", event.pk), {"confirm": True})
         self.assertEqual(response.status_code, 302)
         self.assertFalse(HistoricalIPEvent.objects.filter(pk=event.pk).exists())
+
+
+class ExportSanitizationTests(TestCase):
+    user_permissions = ["netbox_ip_history.view_historicalipevent"]
+
+    def test_csv_export_neutralizes_spreadsheet_formulas(self):
+        import csv
+        import io
+        from datetime import UTC, datetime
+
+        source = make_source(source_timezone="UTC")
+        payloads = {
+            "hostname": "=HYPERLINK(\"http://example.com\",\"x\")",
+            "owner_name": "+1+1",
+            "dns_name": "-2+3",
+            "description": "@SUM(1)",
+            "status": "\tactive",
+            "interface_name": "\reth0",
+        }
+        HistoricalIPEvent.objects.create(
+            source=source, ip_address="198.51.100.9", event_type="imported", fingerprint="x",
+            timestamp=datetime(2025, 1, 1, tzinfo=UTC), **payloads,
+        )
+        response = self.client.get(url("timeline"), {"ip": "198.51.100.9", "export": "csv"})
+        row = next(csv.DictReader(io.StringIO(response.content.decode())))
+        for field, value in payloads.items():
+            with self.subTest(field=field):
+                self.assertEqual(row[field], "'" + value)
+
+        exported = self.client.get(url("timeline"), {"ip": "198.51.100.9", "export": "json"}).json()[0]
+        self.assertEqual(exported["hostname"], payloads["hostname"])

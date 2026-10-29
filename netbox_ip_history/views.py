@@ -305,6 +305,16 @@ _EXPORT_COLUMNS = (
 )
 
 
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(value):
+    """Neutralize spreadsheet formulas (CSV injection) in untrusted imported strings."""
+    if isinstance(value, str) and value.startswith(_FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
+
 class TimelineView(PermissionRequiredView):
     permission_required = f"{PLUGIN}.view_historicalipevent"
 
@@ -342,7 +352,7 @@ class TimelineView(PermissionRequiredView):
             buffer = io.StringIO()
             writer = csv.DictWriter(buffer, fieldnames=_EXPORT_COLUMNS)
             writer.writeheader()
-            writer.writerows(rows)
+            writer.writerows({key: _csv_safe(value) for key, value in row.items()} for row in rows)
             response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
