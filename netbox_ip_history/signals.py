@@ -37,14 +37,20 @@ _UPSERT_FIELDS = (
 
 def get_native_source():
     """The singleton ImportSource representing NetBox itself (re-created if deleted)."""
-    from .choices import SourceTypeChoices
-    from .models import ImportSource
+    from django.core.exceptions import ImproperlyConfigured
 
+    from .choices import SourceTypeChoices
+    from .models import NATIVE_SOURCE_SLUG, ImportSource
+
+    if ImportSource.objects.filter(slug=NATIVE_SOURCE_SLUG).exclude(source_type=SourceTypeChoices.NETBOX).exists():
+        raise ImproperlyConfigured(
+            f"ImportSource {NATIVE_SOURCE_SLUG!r} is not of type 'netbox'; rename it so native history can be recorded."
+        )
     source, _ = ImportSource.objects.get_or_create(
-        slug="netbox",
+        slug=NATIVE_SOURCE_SLUG,
+        source_type=SourceTypeChoices.NETBOX,
         defaults={
             "name": "NetBox",
-            "source_type": SourceTypeChoices.NETBOX,
             "description": "Native NetBox IP address lifecycle events",
             "source_priority": 1,
         },

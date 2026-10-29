@@ -15,6 +15,9 @@ __all__ = ("HistoricalIPEvent", "ImportJob", "ImportSource")
 #: Canonical scope label for addresses outside any VRF.
 GLOBAL_VRF = "Global"
 
+#: Slug of the single ImportSource representing NetBox itself (source_type "netbox").
+NATIVE_SOURCE_SLUG = "netbox"
+
 
 class ImportSource(NetBoxModel):
     """A system of record that IP history is imported from (or NetBox itself)."""
@@ -63,6 +66,14 @@ class ImportSource(NetBoxModel):
                 ).format(name=self.source_timezone)
         if mapping_error := self._field_mapping_error():
             errors["field_mapping"] = mapping_error
+        is_native_type = self.source_type == SourceTypeChoices.NETBOX
+        if is_native_type and self.slug != NATIVE_SOURCE_SLUG:
+            errors["source_type"] = _(
+                "Reserved for NetBox's own history. To import another NetBox instance's changelog, "
+                "use \"NetBox changelog export\"."
+            )
+        elif self.slug == NATIVE_SOURCE_SLUG and not is_native_type:
+            errors["slug"] = _("The slug \"{slug}\" is reserved for NetBox's own history.").format(slug=self.slug)
         if errors:
             raise ValidationError(errors)
 

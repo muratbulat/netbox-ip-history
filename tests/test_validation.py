@@ -60,3 +60,56 @@ class ImportSourceValidationTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Import failed")
+
+
+class NativeSourceReservationTests(TestCase):
+    user_permissions = ["netbox_ip_history.add_importsource", "netbox_ip_history.change_importsource"]
+
+    def test_netbox_type_and_slug_are_reserved_for_the_native_source(self):
+        cases = (
+            {"slug": "other-netbox", "source_type": "netbox"},
+            {"slug": "netbox", "source_type": "generic_csv"},
+        )
+        for fields in cases:
+            with self.subTest(**fields), self.assertRaises(ValidationError):
+                ImportSource(name=fields["slug"], **fields).full_clean()
+        ImportSource(name="NetBox", slug="netbox", source_type="netbox").full_clean()
+
+        api = self.client.post(
+            reverse("plugins-api:netbox_ip_history-api:importsource-list"),
+            {"name": "remote", "slug": "remote", "source_type": "netbox"},
+            content_type="application/json",
+        )
+        self.assertEqual(api.status_code, 400)
+
+    def test_native_source_lookup_uses_slug_and_type(self):
+        from django.core.exceptions import ImproperlyConfigured
+
+        from netbox_ip_history.signals import get_native_source
+
+        ImportSource.objects.create(name="Remote NetBox", slug="netbox-external", source_type="netbox_export")
+        native = get_native_source()
+        self.assertEqual((native.slug, native.source_type), ("netbox", "netbox"))
+        ImportSource.objects.filter(pk=native.pk).update(source_type="generic_csv")
+        with self.assertRaises(ImproperlyConfigured):
+            get_native_source()
+
+
+class LegacySourceMigrationTests(TestCase):
+    def test_0011_maps_legacy_source_types(self):
+        import importlib
+
+        from django.apps import apps
+
+        migration = importlib.import_module("netbox_ip_history.migrations.0011_legacy_source_types")
+        sql = make_source("generic-sql", "generic_csv")
+        external = make_source("netbox-external", "generic_csv")
+        native = make_source("netbox", "netbox")
+        ImportSource.objects.filter(pk=sql.pk).update(source_type="generic_sql")
+        ImportSource.objects.filter(pk=external.pk).update(source_type="netbox")
+
+        migration.forwards(apps, None)
+
+        types = dict(ImportSource.objects.values_list("slug", "source_type"))
+        self.assertEqual(types, {"generic-sql": "other", "netbox-external": "netbox_export", "netbox": "netbox"})
+        self.assertEqual(ImportSource.objects.get(pk=native.pk).source_type, "netbox")

@@ -29,6 +29,11 @@ All notable changes to this project are documented here.
   earlier version now fails its import with an error instead of a server error, and a failed
   background import no longer leaves its import job pending.
 - Background imports record the uploaded file's SHA-256 on the import job (it was left empty).
+- Import sources left by pre-1.0 versions are migrated (`0011`): `generic_sql` becomes
+  `other`, and `netbox`-typed sources other than the native one become *NetBox changelog
+  export* (they were hidden from the import form and treated as native history). The `netbox`
+  source type and slug are now reserved for NetBox's own history, and the native source is
+  looked up by both.
 
 ## [1.0.0] - 2026-10-26
 
