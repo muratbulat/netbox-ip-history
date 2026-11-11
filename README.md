@@ -51,7 +51,7 @@ echo netbox-ip-history >> /opt/netbox/local_requirements.txt
 ```
 
 Adding the plugin to `local_requirements.txt` makes NetBox's own `upgrade.sh` reinstall it
-whenever NetBox is upgraded. Pin a version (`netbox-ip-history==1.1.0`) if you want upgrades
+whenever NetBox is upgraded. Pin a version (`netbox-ip-history==1.1.1`) if you want upgrades
 to be deliberate.
 
 #### From GitHub
@@ -60,15 +60,15 @@ Install a release tag (or a branch such as `dev` to test unreleased changes):
 
 ```shell
 source /opt/netbox/venv/bin/activate
-pip install "git+https://github.com/muratbulat/netbox-ip-history.git@v1.1.0"
-echo "netbox-ip-history @ git+https://github.com/muratbulat/netbox-ip-history.git@v1.1.0" \
+pip install "git+https://github.com/muratbulat/netbox-ip-history.git@v1.1.1"
+echo "netbox-ip-history @ git+https://github.com/muratbulat/netbox-ip-history.git@v1.1.1" \
     >> /opt/netbox/local_requirements.txt
 ```
 
 Or from a clone, for example to review the code first:
 
 ```shell
-git clone --branch v1.1.0 https://github.com/muratbulat/netbox-ip-history.git
+git clone --branch v1.1.1 https://github.com/muratbulat/netbox-ip-history.git
 source /opt/netbox/venv/bin/activate
 pip install ./netbox-ip-history
 ```
@@ -79,17 +79,17 @@ The plugin is a single pure-Python wheel with no dependencies of its own, so one
 enough. On a machine with internet access:
 
 ```shell
-pip download netbox-ip-history==1.1.0 --no-deps --only-binary=:all: -d netbox-ip-history-pkg
+pip download netbox-ip-history==1.1.1 --no-deps --only-binary=:all: -d netbox-ip-history-pkg
 sha256sum netbox-ip-history-pkg/*.whl   # optionally compare with the hash on pypi.org
 ```
 
-Copy `netbox_ip_history-1.1.0-py3-none-any.whl` to the NetBox host (e.g. into
+Copy `netbox_ip_history-1.1.1-py3-none-any.whl` to the NetBox host (e.g. into
 `/opt/netbox/plugins/`) and install it without contacting an index:
 
 ```shell
 source /opt/netbox/venv/bin/activate
-pip install --no-index --no-deps /opt/netbox/plugins/netbox_ip_history-1.1.0-py3-none-any.whl
-echo /opt/netbox/plugins/netbox_ip_history-1.1.0-py3-none-any.whl >> /opt/netbox/local_requirements.txt
+pip install --no-index --no-deps /opt/netbox/plugins/netbox_ip_history-1.1.1-py3-none-any.whl
+echo /opt/netbox/plugins/netbox_ip_history-1.1.1-py3-none-any.whl >> /opt/netbox/local_requirements.txt
 ```
 
 Referencing the wheel file in `local_requirements.txt` lets `upgrade.sh` reinstall it without

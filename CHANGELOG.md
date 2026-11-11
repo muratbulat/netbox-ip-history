@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here.
 
+## [1.1.1] - 2026-11-11
+
+### Upgrading
+- No migrations. To fill in the tenant of native events recorded by 1.1.0, run
+  `python manage.py import_ip_history --native` once.
+
+### Security
+- Deleting an import job (single, bulk or through the API) now requires permission to delete
+  every event it would delete, as rolling the job back already did. Previously the cascade
+  bypassed object-level delete constraints on events.
+- The *Source record* (`raw_data`) of native events, a copy of NetBox's change data, is now
+  hidden in the UI and returned as `null` by the API for users without
+  `core.view_objectchange`.
+
+### Fixed
+- Native events record the IP address's tenant name; 1.1.0 left it empty because NetBox's
+  changelog stores the tenant's ID. Tenants deleted since are named from their changelog.
+- With `enable_global_search` off, search cache entries left from when it was on are removed,
+  so NetBox's global search page no longer fails when one of them matches.
+
 ## [1.1.0] - 2026-10-30
 
 ### Upgrading
