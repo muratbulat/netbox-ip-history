@@ -1,13 +1,17 @@
+import io
 import uuid
 
 from core.models import ObjectChange
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import RequestFactory, TestCase, override_settings
 from ipam.models import VRF, IPAddress
 from netbox.context_managers import event_tracking
+from tenancy.models import Tenant
 
 from netbox_ip_history.choices import EventTypeChoices, SourceTypeChoices
 from netbox_ip_history.models import HistoricalIPEvent, ImportSource
+from netbox_ip_history.services.timeline import ObjectLookup, describe_change
 
 from .helpers import ip_change, make_device, make_interface
 
@@ -95,8 +99,17 @@ class BackfillOnMigrateTests(TestCase):
                               apps=self.apps, verbosity=0, interactive=False, plan=[], **kwargs)
 
     def test_unrecorded_changes_are_recorded_and_searchable(self):
-        from extras.models import CachedValue
+        from unittest import mock
 
+        from extras.models import CachedValue
+        from netbox.registry import registry
+
+        from netbox_ip_history.search import HistoricalIPEventIndex
+
+        # Indexing behaviour with global search enabled, whatever the host's setting is.
+        patcher = mock.patch.dict(registry["search"], {"netbox_ip_history.historicalipevent": HistoricalIPEventIndex})
+        patcher.start()
+        self.addCleanup(patcher.stop)
         ip_change("192.0.2.90/24")
         ip_change("192.0.2.91/24", minutes=1)
         HistoricalIPEvent.objects.all().delete()  # history from before the plugin was installed
@@ -148,3 +161,56 @@ class BackfillOnMigrateTests(TestCase):
         backfill_after_migrate(sender=self.app_config, using="default", apps=StateWithoutPlugin())
         backfill_after_migrate(sender=self.app_config, using="other", apps=self.apps)
         self.assertFalse(HistoricalIPEvent.objects.exists())
+
+
+class NativeTenantTests(TestCase):
+    """Native changelogs store the tenant as an ID; events must record its name (M1)."""
+
+    def setUp(self):
+        self.request = RequestFactory().get("/")
+        self.request.id = uuid.uuid4()
+        self.request.user = get_user_model().objects.create_user(username="operator")
+
+    def tracked(self, fn):
+        with event_tracking(self.request):
+            return fn()
+
+    def test_tenant_name_is_recorded(self):
+        tenant = Tenant.objects.create(name="ACME", slug="acme")
+        self.tracked(lambda: IPAddress.objects.create(address="198.51.100.60/24", tenant=tenant))
+        self.assertEqual(HistoricalIPEvent.objects.get(ip_address="198.51.100.60").tenant_name, "ACME")
+
+    def test_tenant_change_records_the_new_tenant(self):
+        old, new = Tenant.objects.create(name="Old", slug="old"), Tenant.objects.create(name="New", slug="new")
+        ip = self.tracked(lambda: IPAddress.objects.create(address="198.51.100.61/24", tenant=old))
+
+        def retenant():
+            ip.snapshot()
+            ip.tenant = new
+            ip.save()
+
+        self.tracked(retenant)
+        events = HistoricalIPEvent.objects.filter(ip_address="198.51.100.61").order_by("timestamp", "pk")
+        self.assertEqual([e.tenant_name for e in events], ["Old", "New"])
+
+    def test_deleted_tenant_is_named_from_its_changelog(self):
+        tenant = self.tracked(lambda: Tenant.objects.create(name="Gone Ltd", slug="gone"))
+        tenant_id = tenant.pk
+        self.tracked(tenant.delete)
+        ip_change("198.51.100.62/24", post={"address": "198.51.100.62/24", "tenant": tenant_id})
+        self.assertEqual(HistoricalIPEvent.objects.get(ip_address="198.51.100.62").tenant_name, "Gone Ltd")
+
+    def test_tenant_ids_from_foreign_changelogs_are_not_resolved(self):
+        change = {"action": "create", "postchange_data": {"address": "198.51.100.63/24", "tenant": 1}}
+        self.assertEqual(describe_change(change, ObjectLookup(resolve=False))["tenant_name"], "")
+        change["postchange_data"]["tenant"] = {"id": 1, "name": "Exported"}
+        self.assertEqual(describe_change(change, ObjectLookup(resolve=False))["tenant_name"], "Exported")
+
+    def test_native_backfill_repairs_events_recorded_without_tenant(self):
+        tenant = Tenant.objects.create(name="ACME", slug="acme")
+        self.tracked(lambda: IPAddress.objects.create(address="198.51.100.64/24", tenant=tenant))
+        HistoricalIPEvent.objects.filter(ip_address="198.51.100.64").update(tenant_name="")  # as recorded by 1.1.0
+
+        call_command("import_ip_history", "--native", stdout=io.StringIO())
+
+        self.assertEqual(HistoricalIPEvent.objects.get(ip_address="198.51.100.64").tenant_name, "ACME")

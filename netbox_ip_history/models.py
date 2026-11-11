@@ -225,3 +225,10 @@ class HistoricalIPEvent(NetBoxModel):
     @property
     def is_native(self):
         return self.source.source_type == SourceTypeChoices.NETBOX
+
+    def can_view_raw_data(self, user) -> bool:
+        """
+        Native events copy a core.ObjectChange's full pre/post-change data into raw_data, so
+        only users who may view the changelog may see it (as for live ObjectChanges).
+        """
+        return not self.is_native or (user is not None and user.has_perm("core.view_objectchange"))

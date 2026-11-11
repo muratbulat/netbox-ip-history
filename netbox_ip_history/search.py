@@ -33,3 +33,19 @@ indexes = (
     if get_plugin_config("netbox_ip_history", "enable_global_search")
     else []
 )
+
+
+def purge_search_cache() -> int:
+    """
+    Delete this plugin's entries from NetBox's search cache (extras.CachedValue).
+
+    With ``enable_global_search`` off the indexes above are not registered, but values cached
+    while it was on remain and keep matching searches. NetBox renders every result through its
+    model's registered index, so one such row makes the whole global search page fail.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from extras.models import CachedValue
+
+    object_types = list(ContentType.objects.get_for_models(HistoricalIPEvent, ImportSource).values())
+    deleted, _ = CachedValue.objects.filter(object_type__in=object_types).delete()
+    return deleted

@@ -160,8 +160,12 @@ class APITests(TestCase):
 
 class RegistrationTests(TestCase):
     def test_search_indexes_registered(self):
-        self.assertIn("netbox_ip_history.historicalipevent", registry["search"])
-        self.assertIn("netbox_ip_history.importsource", registry["search"])
+        from netbox.plugins import get_plugin_config
+
+        # Registered exactly when global search is enabled (the host's own setting).
+        expected = bool(get_plugin_config("netbox_ip_history", "enable_global_search"))
+        self.assertEqual("netbox_ip_history.historicalipevent" in registry["search"], expected)
+        self.assertEqual("netbox_ip_history.importsource" in registry["search"], expected)
 
     def test_menu_items_are_permission_gated(self):
         from netbox_ip_history.navigation import menu

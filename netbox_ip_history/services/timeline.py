@@ -96,6 +96,7 @@ class ObjectLookup:
         self.devices: dict[int, str] = {}
         self.virtual_machines: dict[int, str] = {}
         self.vrfs: dict[int, str] = {}
+        self.tenants: dict[int, str] = {}
         self.device_names: set[str] = set()
         self.vm_names: set[str] = set()
         if resolve:
@@ -105,16 +106,19 @@ class ObjectLookup:
         from core.models import ObjectChange
         from dcim.models import Device, Interface
         from ipam.models import VRF
+        from tenancy.models import Tenant
         from virtualization.models import VirtualMachine, VMInterface
 
-        ct_ids, assigned, devices, vms, vrfs = set(), set(), set(), set(), set()
+        ct_ids, assigned, devices, vms, vrfs, tenants = set(), set(), set(), set(), set(), set()
         for payload in payloads:
             for key in ("assigned_object_type", "assigned_object_type_id"):
                 if isinstance(payload.get(key), int):
                     ct_ids.add(payload[key])
             if isinstance(payload.get("assigned_object_id"), int):
                 assigned.add(payload["assigned_object_id"])
-            for key, bucket in (("device", devices), ("host", devices), ("virtual_machine", vms), ("vrf", vrfs)):
+            for key, bucket in (
+                ("device", devices), ("host", devices), ("virtual_machine", vms), ("vrf", vrfs), ("tenant", tenants)
+            ):
                 if isinstance(payload.get(key), int):
                     bucket.add(payload[key])
 
@@ -154,6 +158,21 @@ class ObjectLookup:
             self.virtual_machines = dict(VirtualMachine.objects.filter(pk__in=vms).values_list("pk", "name"))
         if vrfs:
             self.vrfs = dict(VRF.objects.filter(pk__in=vrfs).values_list("pk", "name"))
+        if tenants:
+            self.tenants = dict(Tenant.objects.filter(pk__in=tenants).values_list("pk", "name"))
+            # Tenants deleted since the change: their last changelog entry still names them.
+            if missing_tenants := tenants - self.tenants.keys():
+                deleted = (
+                    ObjectChange.objects.filter(
+                        changed_object_type__app_label="tenancy",
+                        changed_object_type__model="tenant",
+                        changed_object_id__in=missing_tenants,
+                    )
+                    .order_by("changed_object_id", "-time")
+                    .distinct("changed_object_id")
+                    .values_list("changed_object_id", "object_repr")
+                )
+                self.tenants.update(deleted)
 
         names = set()
         for payload in payloads:
@@ -447,7 +466,8 @@ def describe_change(change, lookup: ObjectLookup | None = None) -> dict[str, Any
         "source_event_type": action,
         "source_username": username,
         "vrf_name": details["vrf_name"],
-        "tenant_name": _name(tenant) if not isinstance(tenant, int) else "",
+        # Native changelogs store the tenant's ID; exports from elsewhere may carry a name or object.
+        "tenant_name": lookup.tenants.get(tenant, "") if isinstance(tenant, int) else _name(tenant),
         "hostname": details["dns_name"] or details["host_name"],
         "dns_name": details["dns_name"],
         "description": details["description"],

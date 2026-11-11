@@ -3,10 +3,11 @@
 import logging
 
 from core.models import ObjectChange
+from django.core.signals import request_started
 from django.db import DEFAULT_DB_ALIAS, transaction
 from django.db.models import BigIntegerField
 from django.db.models.functions import Cast
-from django.db.models.signals import post_migrate, post_save
+from django.db.models.signals import post_migrate, post_save, pre_delete
 from django.dispatch import receiver
 from netbox.plugins import get_plugin_config
 
@@ -131,6 +132,28 @@ def object_change_receiver(sender, instance, **kwargs):
         logger.warning("Failed to record ObjectChange %s as IP history", instance.pk, exc_info=True)
 
 
+@receiver(pre_delete, sender="netbox_ip_history.ImportJob", dispatch_uid="netbox_ip_history_importjob_delete")
+def guard_import_job_delete(sender, instance, **kwargs):
+    """
+    Deleting an ImportJob cascades to its events, so a user-initiated delete (UI, bulk or API)
+    must be allowed to delete every one of them, exactly as a rollback must.
+    """
+    from netbox.context import current_request
+    from utilities.exceptions import AbortRequest
+
+    from .services.import_service import denied_event_deletes
+
+    request = current_request.get()
+    if request is None or not getattr(request, "user", None):
+        return  # Not a request (shell, management command, job): no acting user to check.
+    if denied := denied_event_deletes(instance, request.user):
+        # No object names here: NetBox renders this message as HTML.
+        raise AbortRequest(
+            f"Deleting this import job would delete {denied} event(s) that your object permissions do not "
+            "allow you to delete; nothing was deleted."
+        )
+
+
 def backfill_native_events(batch_size=1000) -> int:
     """
     Record every ipaddress ObjectChange that is not yet stored as a native event.
@@ -184,3 +207,35 @@ def backfill_after_migrate(sender, using=DEFAULT_DB_ALIAS, apps=None, verbosity=
         return
     if recorded and verbosity and stdout is not None:
         stdout.write(f"  netbox_ip_history: recorded {recorded} existing NetBox IP change(s) as history events\n")
+
+
+_SEARCH_PURGE_UID = "netbox_ip_history_purge_search_cache"
+
+
+def purge_stale_search_cache(**kwargs):
+    """
+    With global search disabled, drop this plugin's leftover search cache entries once per
+    process (on its first request), so NetBox's own global search keeps working.
+    """
+    from .search import purge_search_cache
+
+    try:
+        deleted = purge_search_cache()
+    except Exception:
+        logger.warning("Removing IP history entries from the global search cache failed", exc_info=True)
+        return  # Stay connected and retry on the next request.
+    request_started.disconnect(dispatch_uid=_SEARCH_PURGE_UID)
+    if deleted:
+        logger.info("Global search is disabled: removed %s cached IP history search value(s)", deleted)
+
+
+def schedule_search_cache_purge() -> bool:
+    """Connect the one-time purge when global search is disabled; returns whether it is scheduled."""
+    if get_plugin_config("netbox_ip_history", "enable_global_search"):
+        request_started.disconnect(dispatch_uid=_SEARCH_PURGE_UID)
+        return False
+    request_started.connect(purge_stale_search_cache, dispatch_uid=_SEARCH_PURGE_UID)
+    return True
+
+
+schedule_search_cache_purge()

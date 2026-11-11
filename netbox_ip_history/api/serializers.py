@@ -58,6 +58,14 @@ class HistoricalIPEventSerializer(NetBoxModelSerializer):
         read_only_fields = tuple(f for f in fields if f not in ("tags", "custom_fields"))
         brief_fields = ("id", "url", "display", "timestamp", "ip_address", "event_type")
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if "raw_data" in data:
+            request = self.context.get("request")
+            if not instance.can_view_raw_data(getattr(request, "user", None)):
+                data["raw_data"] = None  # Withheld: requires core.view_objectchange for native events.
+        return data
+
 
 class TimelineEntrySerializer(serializers.Serializer):
     id = serializers.IntegerField(source="pk", help_text="Primary key of the object named by kind")

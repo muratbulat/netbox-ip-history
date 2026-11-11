@@ -24,6 +24,7 @@ __all__ = (
     "ImportPermissionError",
     "ImportResult",
     "build_importer",
+    "denied_event_deletes",
     "normalize_record",
     "rollback_job",
     "run_import",
@@ -252,6 +253,12 @@ def _finalize(job: ImportJob, result: ImportResult) -> None:
     job.save()
 
 
+def denied_event_deletes(job: ImportJob, user) -> int:
+    """Number of ``job``'s events that ``user``'s object-level "delete" permissions don't cover."""
+    events = HistoricalIPEvent.objects.filter(import_job=job)
+    return events.count() - HistoricalIPEvent.objects.restrict(user, "delete").filter(import_job=job).count()
+
+
 @transaction.atomic
 def rollback_job(job: ImportJob, user=None) -> int:
     """
@@ -261,13 +268,11 @@ def rollback_job(job: ImportJob, user=None) -> int:
     constraints: if any event of the job falls outside them, nothing is deleted.
     """
     events = HistoricalIPEvent.objects.filter(import_job=job)
-    if user is not None:
-        denied = events.count() - HistoricalIPEvent.objects.restrict(user, "delete").filter(import_job=job).count()
-        if denied:
-            raise ImportPermissionError(
-                f"Deleting {denied} event(s) of this import is not permitted by your object permissions; "
-                "nothing was rolled back."
-            )
+    if user is not None and (denied := denied_event_deletes(job, user)):
+        raise ImportPermissionError(
+            f"Deleting {denied} event(s) of this import is not permitted by your object permissions; "
+            "nothing was rolled back."
+        )
     deleted, _ = events.delete()
     job.status = ImportStatusChoices.ROLLED_BACK
     job.summary = {**(job.summary or {}), "rolled_back_events": deleted}

@@ -103,6 +103,14 @@ class HistoricalIPEventOwnerPanel(panels.ObjectAttributesPanel):
     description = attrs.TextAttr("description")
 
 
+class SourceRecordPanel(panels.JSONPanel):
+    """raw_data, hidden for native events from users who may not view the NetBox changelog."""
+
+    def should_render(self, context):
+        request = context.get("request")
+        return context["object"].can_view_raw_data(getattr(request, "user", None))
+
+
 #
 # Import sources
 #
@@ -259,7 +267,7 @@ class HistoricalIPEventView(generic.ObjectView):
     layout = layout.SimpleLayout(
         left_panels=[HistoricalIPEventPanel(), TagsPanel()],
         right_panels=[HistoricalIPEventOwnerPanel(title=_("Assignment")), CustomFieldsPanel()],
-        bottom_panels=[panels.JSONPanel("raw_data", title=_("Source record"))],
+        bottom_panels=[SourceRecordPanel("raw_data", title=_("Source record"))],
     )
 
 
