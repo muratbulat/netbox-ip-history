@@ -59,6 +59,7 @@ jobs:
           cat > /tmp/netbox/netbox/netbox/configuration.py <<'EOF'
           ALLOWED_HOSTS = ["*"]
           SECRET_KEY = "ci-only-secret-key-for-tests-only-and-never-for-production-use-1234567890"
+          API_TOKEN_PEPPERS = {1: "ci-only-api-token-pepper-for-tests-only-and-never-for-production-0123456789"}
           DATABASE = {"NAME": "netbox", "USER": "netbox", "PASSWORD": "netbox", "HOST": "127.0.0.1", "PORT": "5432"}
           REDIS = {
               "tasks": {"HOST": "127.0.0.1", "PORT": 6379, "DATABASE": 0, "SSL": False},
